@@ -1,0 +1,11 @@
+syntax = "proto3";
+option go_package = ".;types";
+package chain.core.txdb.internal.storage;
+
+message TxOutput {
+  bytes id  =1;
+  bool   isCoinBase  = 2;
+  bytes address = 3;
+  uint64 amount = 4;
+  bytes scriptPk = 5;
+}
