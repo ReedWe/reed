@@ -5,6 +5,8 @@ import (
 	"github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/validation"
 	"github.com/tybc/errors"
+	"github.com/tybc/log"
+	"github.com/tybc/wallet"
 )
 
 var (
@@ -12,6 +14,7 @@ var (
 )
 
 type SubmitTxRequest struct {
+	Password  string      `json:"wallet_password"`
 	TxInputs  []ReqInput  `json:"tx_inputs"`
 	TxOutputs []ReqOutput `json:"tx_outputs"`
 }
@@ -52,6 +55,13 @@ func SubmitTx(chain *blockchain.Chain, tx *SubmitTxRequest) (*SumbitTxResponse, 
 
 	if err := validation.CheckUtxoExists(&chain.Store, &outputs); err != nil {
 		return nil, err
+	}
+
+	//TODO sign transaction
+	if wt, err := wallet.My(tx.Password); err != nil {
+		return nil, err
+	} else {
+		log.Logger.Infof("pub %s", wt.Pub)
 	}
 
 	return nil, nil
