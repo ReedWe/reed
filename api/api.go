@@ -7,6 +7,7 @@ import (
 	dbm "github.com/tendermint/tmlibs/db"
 	bc "github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/tx"
+	"github.com/tybc/core"
 	"github.com/tybc/database/leveldb"
 	"github.com/tybc/log"
 	"io/ioutil"
@@ -49,7 +50,7 @@ func NewApi() *API {
 		Addr:    mainURL,
 		Handler: mux,
 	}
-	api.Chain = bc.Chain{Store: leveldbStore}
+	api.Chain = bc.Chain{Store: leveldbStore, Txpool: &core.Txpool{}}
 	api.Server = httpServer
 
 	return api
