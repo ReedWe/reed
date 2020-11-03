@@ -1,44 +1,57 @@
 package tx
 
 import (
-	"github.com/tybc/core/types"
+	"encoding/hex"
+	"github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/validation"
+	"github.com/tybc/errors"
 )
 
-//type BuildResult struct {
-//	Transaction TxResult `json:"transaction"`
-//}
+var (
+	ErrSubmitTx = errors.New("sumbit tx")
+)
 
-type BuildRequest struct {
-	TxInputs  []types.TxInput
-	TxOutputs []types.TxOutput
+type SubmitTxRequest struct {
+	TxInputs  []ReqInput  `json:"tx_inputs"`
+	TxOutputs []ReqOutput `json:"tx_outputs"`
 }
 
 type ReqInput struct {
-	SpendTxId     types.Hash
-	SpendPosition uint64
-	Signature     string
+	SpendOutputId string `json:"spend_output_id"`
 }
 
 type ReqOutput struct {
-	Address types.Hash
-	Amount  uint64
+	Address string `json:"address"`
+	Amount  uint64 `json:"amount"`
 }
 
-type BuildResponse struct {
-	TxId types.Hash
+type SumbitTxResponse struct {
+	TxId string `json:"tx_id"`
 }
 
-func Build(tx *BuildRequest) (*BuildResponse, error) {
+func SubmitTx(chain *blockchain.Chain, tx *SubmitTxRequest) (*SumbitTxResponse, error) {
 
-	if len(tx.TxInputs) == 0 || len(tx.TxOutputs) == 0 {
-		return nil, nil
+	if len(tx.TxInputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
 	}
 
-	err := validation.CheckUtxoExists(&tx.TxOutputs)
+	if len(tx.TxOutputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
+	}
 
-	if err != nil {
-		return nil, nil
+	var outputs = make([][]byte, len(tx.TxInputs))
+	for i, ti := range tx.TxInputs {
+		b, err := hex.DecodeString(ti.SpendOutputId)
+		if err != nil {
+			return nil, errors.WithDetail(ErrSubmitTx, "invalid spend_output_id format")
+		}
+		outputs[i] = b
+	}
+
+	//TODO check if exist on txpool
+
+	if err := validation.CheckUtxoExists(&chain.Store, &outputs); err != nil {
+		return nil, err
 	}
 
 	return nil, nil

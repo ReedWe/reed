@@ -1,3 +1,7 @@
 go.mod
 go.sum
+*.log
+tiny
 .idea/*
+database/file
+practice_main.go

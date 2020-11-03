@@ -1,14 +1,17 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/tendermint/tmlibs/common"
 	dbm "github.com/tendermint/tmlibs/db"
 	bc "github.com/tybc/blockchain"
+	"github.com/tybc/blockchain/tx"
 	"github.com/tybc/database/leveldb"
-	"net/http"
-
+	"github.com/tybc/log"
+	"io/ioutil"
 	"net"
+	"net/http"
 )
 
 var (
@@ -16,11 +19,11 @@ var (
 )
 
 type API struct {
-	store  bc.Store
-	server *http.Server
+	Chain  bc.Chain
+	Server *http.Server
 }
 
-type ApiRes struct {
+type Res struct {
 	Success bool        `json:"success"`
 	Data    interface{} `json:"data"`
 }
@@ -30,12 +33,15 @@ func NewApi() *API {
 	fmt.Println("new api...")
 	leveldbStore := leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, "/Users/jan/go/src/github.com/tybc/database/file/"))
 
+	api := &API{}
+
 	//init api server
 	fmt.Println("init api server")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprint(writer, "Welcome to Tiny chain!")
 	})
+	mux.HandleFunc("/sumbit-transaction", api.SubmitTxHandler)
 
 	fmt.Println("handlefunc complete")
 
@@ -43,11 +49,9 @@ func NewApi() *API {
 		Addr:    mainURL,
 		Handler: mux,
 	}
+	api.Chain = bc.Chain{Store: leveldbStore}
+	api.Server = httpServer
 
-	api := &API{
-		store:  leveldbStore,
-		server: httpServer,
-	}
 	return api
 }
 
@@ -59,7 +63,7 @@ func (a *API) StartApiServer() {
 	}
 
 	go func() {
-		if err := a.server.Serve(listen); err != nil {
+		if err := a.Server.Serve(listen); err != nil {
 			fmt.Println("Rpc server error")
 		}
 	}()
@@ -68,8 +72,46 @@ func (a *API) StartApiServer() {
 
 }
 
-func NewSuccessRes(data interface{}) ApiRes {
-	return ApiRes{Success: true, Data: data}
+func PrintSuccessRes(writer http.ResponseWriter, data interface{}) {
+	r := &Res{Success: true, Data: data}
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Logger.Errorf("json marshal %v", err)
+	}
+	fmt.Fprint(writer, string(b))
+}
+
+func PrintErrorRes(writer http.ResponseWriter, data interface{}) {
+	r := &Res{Success: false, Data: data}
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Logger.Errorf("json marshal %v", err)
+	}
+	fmt.Fprint(writer, string(b))
+}
+
+func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request) {
+	if data, err := ioutil.ReadAll(request.Body); err != nil {
+		log.Logger.Errorf("sumbit transaction handler %v", err)
+		PrintErrorRes(writer, err)
+		return
+	} else {
+		m := &tx.SubmitTxRequest{}
+		err := json.Unmarshal(data, m)
+		if err != nil {
+			PrintErrorRes(writer, err)
+			return
+		}
+		log.Logger.Infof("submit tx handler success")
+
+		txResponse, err := tx.SubmitTx(&a.Chain, m)
+		if err != nil {
+			log.Logger.Error(err.Error())
+			PrintErrorRes(writer, err.Error())
+			return
+		}
+		PrintSuccessRes(writer, txResponse)
+	}
 }
 
 //
