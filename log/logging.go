@@ -1,6 +1,9 @@
 package log
 
-import "github.com/sirupsen/logrus"
+import (
+	"github.com/sirupsen/logrus"
+	"os"
+)
 
 var Logger *logrus.Logger
 var Clogger *logrus.Logger
@@ -12,7 +15,7 @@ func (ew emptyWriter) Write(p []byte) (int, error) {
 }
 
 func Init() {
-	fileHooker := NewFileRotateHooker("/Users/jan/go/src/github.com/tybc", 60*60*24)
+	fileHooker := NewFileRotateHooker(os.Getenv("GOPATH")+"/src/github.com/tybc", 60*60*24)
 
 	Logger = logrus.New()
 	Logger.Hooks.Add(fileHooker)
