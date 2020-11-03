@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tmlibs/common"
 	dbm "github.com/tendermint/tmlibs/db"
 	bc "github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/tx"
 	"github.com/tybc/core"
 	"github.com/tybc/database/leveldb"
+	"github.com/tybc/errors"
 	"github.com/tybc/log"
 	"io/ioutil"
 	"net"
@@ -31,20 +31,16 @@ type Res struct {
 
 func NewApi() *API {
 
-	fmt.Println("new api...")
 	leveldbStore := leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, "/Users/jan/go/src/github.com/tybc/database/file/"))
 
 	api := &API{}
 
 	//init api server
-	fmt.Println("init api server")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprint(writer, "Welcome to Tiny chain!")
 	})
 	mux.HandleFunc("/sumbit-transaction", api.SubmitTxHandler)
-
-	fmt.Println("handlefunc complete")
 
 	httpServer := &http.Server{
 		Addr:    mainURL,
@@ -57,19 +53,16 @@ func NewApi() *API {
 }
 
 func (a *API) StartApiServer() {
-	fmt.Println("start api server")
 	listen, err := net.Listen("tcp", "0.0.0.0:9888")
 	if err != nil {
-		common.Exit(common.Fmt("failed to start api server %v", err))
+		log.Logger.Fatalf("failed to start api server %v", err)
 	}
 
 	go func() {
 		if err := a.Server.Serve(listen); err != nil {
-			fmt.Println("Rpc server error")
+			log.Logger.WithField("error", errors.Wrap(err, "server"))
 		}
 	}()
-
-	fmt.Println("start api server complete")
 
 }
 
@@ -103,8 +96,6 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 			PrintErrorRes(writer, err)
 			return
 		}
-		log.Logger.Infof("submit tx handler success")
-
 		txResponse, err := tx.SubmitTx(&a.Chain, m)
 		if err != nil {
 			log.Logger.Error(err.Error())
