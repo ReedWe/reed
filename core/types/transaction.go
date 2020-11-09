@@ -7,6 +7,8 @@ type Tx struct {
 
 	TxInput  []TxInput
 	TxOutput []TxOutput
+
+
 }
 
 //func (tx *Transaction) sign() {

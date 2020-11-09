@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/validation"
+	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
 	"github.com/tybc/wallet"
@@ -32,37 +33,70 @@ type SumbitTxResponse struct {
 	TxId string `json:"tx_id"`
 }
 
-func SubmitTx(chain *blockchain.Chain, tx *SubmitTxRequest) (*SumbitTxResponse, error) {
+func (req *SubmitTxRequest) Map() (*types.Tx, error) {
 
-	if len(tx.TxInputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
-	}
+	ins := make([]types.TxInput, len(req.TxInputs))
+	ios := make([]types.TxOutput, len(req.TxOutputs))
 
-	if len(tx.TxOutputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
-	}
-
-	var outputs = make([][]byte, len(tx.TxInputs))
-	for i, ti := range tx.TxInputs {
-		b, err := hex.DecodeString(ti.SpendOutputId)
+	for _, inp := range req.TxInputs {
+		b, err := hex.DecodeString(inp.SpendOutputId)
 		if err != nil {
 			return nil, errors.WithDetail(ErrSubmitTx, "invalid spend_output_id format")
 		}
-		outputs[i] = b
+		ins = append(ins, types.TxInput{
+			SpendOutputId: types.BytesToHash(b),
+		})
 	}
 
-	//TODO check if exist on txpool
+	for _, iop := range req.TxOutputs {
+		addr, err := hex.DecodeString(iop.Address)
+		if err != nil {
+			return nil, errors.WithDetail(ErrSubmitTx, "invalid output.address format")
+		}
 
-	if err := validation.CheckUtxoExists(&chain.Store, &outputs); err != nil {
+		ios = append(ios, types.TxOutput{
+			IsCoinBase: false,
+			Address:    addr,
+			Amount:     iop.Amount,
+		})
+	}
+
+	tx := &types.Tx{
+		TxInput:  ins,
+		TxOutput: ios,
+	}
+
+	return tx, nil
+}
+
+func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxResponse, error) {
+
+	if len(reqTx.TxInputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
+	}
+
+	if len(reqTx.TxOutputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
+	}
+
+	// request data map to tx
+	tx, err := reqTx.Map()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validation.CheckUtxoExists(&chain.Store, tx); err != nil {
 		return nil, err
 	}
 
 	//TODO sign transaction
-	if wt, err := wallet.My(tx.Password); err != nil {
+	if wt, err := wallet.My(reqTx.Password); err != nil {
 		return nil, err
 	} else {
 		log.Logger.Infof("pub %s", wt.Pub)
 	}
+
+	//TODO check if exist on txpool
 
 	return nil, nil
 }
