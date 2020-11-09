@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = ".;types";
+package chain.core.txdb.internal.storage;
+
+message UTXO {
+  	bytes outputId = 1;
+  	bytes SoureId = 2;
+  	uint32 SourcePos = 3;
+  	uint64 Amount = 4;
+  	bytes Address = 5;
+  	bytes ScriptPk =6 ;
+}

@@ -2,7 +2,7 @@ package types
 
 type TxInput struct {
 	TxId          Hash
-	Position      uint64
+	Position      uint32
 	SpendOutputId Hash
 
 	ScriptSig []byte

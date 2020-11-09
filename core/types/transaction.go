@@ -1,14 +1,12 @@
 package types
 
-//import "github.com/tybc/crypto"
-
 type Tx struct {
 	ID [32]byte
 
 	TxInput  []TxInput
 	TxOutput []TxOutput
 
-
+	*UTXO
 }
 
 //func (tx *Transaction) sign() {
