@@ -1,9 +1,9 @@
 package tx
 
 import (
+	"bytes"
 	"encoding/hex"
 	"github.com/tybc/blockchain"
-	"github.com/tybc/blockchain/validation"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
@@ -33,7 +33,7 @@ type SumbitTxResponse struct {
 	TxId string `json:"tx_id"`
 }
 
-func (req *SubmitTxRequest) Map() (*types.Tx, error) {
+func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 
 	ins := make([]types.TxInput, len(req.TxInputs))
 	ios := make([]types.TxOutput, len(req.TxOutputs))
@@ -54,7 +54,12 @@ func (req *SubmitTxRequest) Map() (*types.Tx, error) {
 			return nil, errors.WithDetail(ErrSubmitTx, "invalid output.address format")
 		}
 
+		hashId := bytes.Join([][]byte{
+
+		}, []byte{})
+
 		ios = append(ios, types.TxOutput{
+			Id:         hashId,
 			IsCoinBase: false,
 			Address:    addr,
 			Amount:     iop.Amount,
@@ -80,13 +85,14 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 	}
 
 	// request data map to tx
-	tx, err := reqTx.Map()
+	tx, err := reqTx.MapTx()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := validation.CheckUtxoExists(&chain.Store, tx); err != nil {
-		return nil, err
+	//check and set utxo
+	for _, input := range tx.TxInput {
+		input.SetUtxo(&chain.Store)
 	}
 
 	//TODO sign transaction

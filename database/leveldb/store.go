@@ -1,15 +1,16 @@
 package leveldb
 
 import (
-	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/tybc/core/types"
+	"github.com/tybc/errors"
 )
 
 var (
 	utxoPrefix = "UTXO:"
+	storeErr   = errors.New("leveldb error")
 )
 
 type Store struct {
@@ -26,11 +27,11 @@ func getKey(id *[]byte) []byte {
 	return []byte(utxoPrefix + string(*id))
 }
 
-func (store *Store) GetUtxo(id []byte) (*types.TxOutput, error) {
-	var utxo types.TxOutput
+func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
+	var utxo types.UTXO
 	data := store.db.Get(getKey(&id))
 	if data == nil {
-		return nil, errors.New("utxo does not exists")
+		return nil, errors.Wrapf(storeErr, "utxo(id=%h) does not exists", id)
 	}
 
 	if err := proto.Unmarshal(data, &utxo); err != nil {
