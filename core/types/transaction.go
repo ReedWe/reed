@@ -5,8 +5,6 @@ type Tx struct {
 
 	TxInput  []TxInput
 	TxOutput []TxOutput
-
-	*UTXO
 }
 
 //func (tx *Transaction) sign() {
