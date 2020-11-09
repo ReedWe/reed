@@ -47,7 +47,9 @@ func NewApi() *API {
 		Addr:    mainURL,
 		Handler: mux,
 	}
-	api.Chain = bc.Chain{Store: leveldbStore, Txpool: &core.Txpool{}}
+
+	txpool := core.NewTxpool(leveldbStore)
+	api.Chain = bc.Chain{Store: leveldbStore, Txpool: txpool}
 	api.Server = httpServer
 
 	return api

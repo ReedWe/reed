@@ -1,6 +1,8 @@
 package blockchain
 
-import "github.com/tybc/core"
+import (
+	"github.com/tybc/core"
+)
 
 type Chain struct {
 	Store  Store
