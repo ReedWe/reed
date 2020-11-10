@@ -1,9 +1,10 @@
-package tx
+package txbuilder
 
 import (
 	"bytes"
 	"encoding/hex"
 	"github.com/tybc/blockchain"
+	"github.com/tybc/core"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
@@ -44,7 +45,7 @@ func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 			return nil, errors.WithDetail(ErrSubmitTx, "invalid spend_output_id format")
 		}
 		ins = append(ins, types.TxInput{
-			SpendOutputId: types.BytesToHash(b),
+			Spend: types.Spend{SpendOutputId: types.BytesToHash(b)},
 		})
 	}
 
@@ -92,7 +93,11 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 
 	//check and set utxo
 	for _, input := range tx.TxInput {
-		input.SetUtxo(&chain.Store)
+		if utxo, err := core.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
+			return nil, err
+		} else {
+			input.SetSpend(utxo)
+		}
 	}
 
 	//TODO sign transaction

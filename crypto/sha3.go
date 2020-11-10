@@ -13,10 +13,6 @@ func Sha256(data ...[]byte) []byte {
 	return d.Sum(nil)
 }
 
-func Sha256T(data []byte) [32]byte {
-	return sha3.Sum256(data)
-}
-
 func New256() hash.Hash {
 	return sha3.New256()
 }

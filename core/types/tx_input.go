@@ -1,22 +1,36 @@
 package types
 
 import (
-	"github.com/tybc/blockchain"
-	"github.com/tybc/core"
+	"bytes"
+	"github.com/tybc/crypto"
+	"github.com/tybc/errors"
+)
+
+var (
+	inputErr = errors.New("tx input")
 )
 
 type TxInput struct {
-	SpendOutputId Hash
-	*UTXO
-
-	ScriptSig []byte
+	Spend
+	ScriptSig []byte //Sig(Hash(TxInput.Id + tx.Id))
 }
 
-func (txInput *TxInput) SetUtxo(store *blockchain.Store) error {
-	if utxo, err := core.GetUtxoByOutputId(store, txInput.SpendOutputId); err != nil {
-		return err
-	} else {
-		txInput.UTXO = utxo
+func (txInput *TxInput) SetSpend(utxo *UTXO) {
+	txInput.SoureId = BytesToHash(utxo.SoureId)
+	txInput.SourcePos = utxo.SourcePos
+	txInput.Amount = utxo.Amount
+	txInput.ScriptPk = utxo.ScriptPk
+}
+
+func (txInput *TxInput) ID() (Hash, error) {
+	if txInput.ScriptSig == nil {
+		return Hash{}, errors.Wrap(inputErr, "txinput ScriptSig empty")
 	}
-	return nil
+
+	b := bytes.Join([][]byte{
+		txInput.SpendOutputId[:],
+		txInput.SoureId[:],
+		txInput.ScriptPk,
+	}, []byte{})
+	return BytesToHash(crypto.Sha256(b)), nil
 }
