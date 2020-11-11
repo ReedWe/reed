@@ -1,7 +1,6 @@
 package leveldb
 
 import (
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/tybc/core/types"
@@ -42,15 +41,15 @@ func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 }
 
 func (store *Store) SaveUtxo(utxo *types.TxOutput) {
-	b, err := proto.Marshal(utxo)
-	fmt.Printf("data %x \n", b)
-
-	if err != nil {
-		return
-	}
-
-	k := getKey(&utxo.Id)
-	fmt.Printf("Key %x \n", k)
-
-	store.db.Set(getKey(&utxo.Id), b)
+	//b, err := proto.Marshal(utxo)
+	//fmt.Printf("data %x \n", b)
+	//
+	//if err != nil {
+	//	return
+	//}
+	//
+	//k := getKey(&utxo.Id)
+	//fmt.Printf("Key %x \n", k)
+	//
+	//store.db.Set(getKey(&utxo.Id), b)
 }

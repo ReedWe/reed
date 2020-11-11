@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
+	"github.com/tybc/wallet"
 )
 
 var (
@@ -11,6 +12,7 @@ var (
 )
 
 type TxInput struct {
+	ID Hash
 	Spend
 	ScriptSig []byte //Sig(Hash(TxInput.Id + tx.Id))
 }
@@ -22,15 +24,31 @@ func (txInput *TxInput) SetSpend(utxo *UTXO) {
 	txInput.ScriptPk = utxo.ScriptPk
 }
 
-func (txInput *TxInput) ID() (Hash, error) {
+func (txInput *TxInput) SetID() error {
 	if txInput.ScriptSig == nil {
-		return Hash{}, errors.Wrap(inputErr, "txinput ScriptSig empty")
+		return errors.Wrap(inputErr, "txinput ScriptSig empty")
 	}
-
 	b := bytes.Join([][]byte{
 		txInput.SpendOutputId[:],
 		txInput.SoureId[:],
 		txInput.ScriptPk,
 	}, []byte{})
-	return BytesToHash(crypto.Sha256(b)), nil
+	txInput.ID = BytesToHash(crypto.Sha256(b))
+	return nil
+}
+
+func (txInput *TxInput) SetScriptSig(wt *wallet.Wallet, txId *Hash) error {
+	message := bytes.Join([][]byte{
+		txInput.ID[:],
+		(*txId)[:],
+	}, []byte{})
+
+	sig := crypto.Sign(wt.Priv, message)
+
+	//scriptSig = <signature> <public key>
+	txInput.ScriptSig = bytes.Join([][]byte{
+		sig,
+		wt.Pub,
+	}, []byte{})
+	return nil
 }

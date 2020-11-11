@@ -1,7 +1,6 @@
 package txbuilder
 
 import (
-	"bytes"
 	"encoding/hex"
 	"github.com/tybc/blockchain"
 	"github.com/tybc/core"
@@ -36,15 +35,15 @@ type SumbitTxResponse struct {
 
 func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 
-	ins := make([]types.TxInput, len(req.TxInputs))
-	ios := make([]types.TxOutput, len(req.TxOutputs))
+	inputs := make([]types.TxInput, len(req.TxInputs))
+	outputs := make([]types.TxOutput, len(req.TxOutputs))
 
 	for _, inp := range req.TxInputs {
 		b, err := hex.DecodeString(inp.SpendOutputId)
 		if err != nil {
 			return nil, errors.WithDetail(ErrSubmitTx, "invalid spend_output_id format")
 		}
-		ins = append(ins, types.TxInput{
+		inputs = append(inputs, types.TxInput{
 			Spend: types.Spend{SpendOutputId: types.BytesToHash(b)},
 		})
 	}
@@ -55,12 +54,7 @@ func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 			return nil, errors.WithDetail(ErrSubmitTx, "invalid output.address format")
 		}
 
-		hashId := bytes.Join([][]byte{
-
-		}, []byte{})
-
-		ios = append(ios, types.TxOutput{
-			Id:         hashId,
+		outputs = append(outputs, types.TxOutput{
 			IsCoinBase: false,
 			Address:    addr,
 			Amount:     iop.Amount,
@@ -68,8 +62,8 @@ func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 	}
 
 	tx := &types.Tx{
-		TxInput:  ins,
-		TxOutput: ios,
+		TxInput:  inputs,
+		TxOutput: outputs,
 	}
 
 	return tx, nil
@@ -85,29 +79,43 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
 	}
 
+	// get wallet
+	wt, err := wallet.My(reqTx.Password)
+	if err != nil {
+		log.Logger.Infof("pub %s", wt.Pub)
+		return nil, err
+	}
+
 	// request data map to tx
 	tx, err := reqTx.MapTx()
 	if err != nil {
 		return nil, err
 	}
 
-	//check and set utxo
+	//check input rel utxo
+	//set spend data
 	for _, input := range tx.TxInput {
 		if utxo, err := core.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
 			return nil, err
 		} else {
 			input.SetSpend(utxo)
+			input.SetID()
 		}
 	}
 
-	//TODO sign transaction
-	if wt, err := wallet.My(reqTx.Password); err != nil {
-		return nil, err
-	} else {
-		log.Logger.Infof("pub %s", wt.Pub)
+	tx.SetID()
+
+	//sign scriptSig
+	for _, input := range tx.TxInput {
+		input.SetScriptSig(wt, tx.ID)
+	}
+
+	//set outpu id
+	//locking script
+	for _, output := range tx.TxOutput {
+		output.SetID(&tx.ID)
 	}
 
 	//TODO check if exist on txpool
-
 	return nil, nil
 }
