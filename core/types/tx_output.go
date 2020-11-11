@@ -3,22 +3,17 @@ package types
 import (
 	"bytes"
 	"github.com/tybc/crypto"
-	"github.com/tybc/errors"
 	"github.com/tybc/vm"
 )
 
 // id = Hash(tx.id + address)
 type TxOutput struct {
-	ID         Hash
-	IsCoinBase bool
-	Address    []byte
-	Amount     uint64
-	ScriptPk   []byte
+	ID         Hash   `json:"id"`
+	IsCoinBase bool   `json:"isCoinBase"`
+	Address    []byte `json:"address"`
+	Amount     uint64 `json:"amount"`
+	ScriptPk   []byte `json:"scriptPK"`
 }
-
-var (
-	outputErr = errors.New("tx output")
-)
 
 func (output *TxOutput) SetID(txId *Hash) {
 	b := bytes.Join([][]byte{

@@ -30,7 +30,7 @@ func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	var utxo types.UTXO
 	data := store.db.Get(getKey(&id))
 	if data == nil {
-		return nil, errors.Wrapf(storeErr, "utxo(id=%h) does not exists", id)
+		return nil, errors.Wrapf(storeErr, "utxo(id=%x) does not exists", id)
 	}
 
 	if err := proto.Unmarshal(data, &utxo); err != nil {

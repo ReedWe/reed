@@ -3,7 +3,6 @@ package txbuilder
 import (
 	"encoding/hex"
 	"github.com/tybc/blockchain"
-	"github.com/tybc/core"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
@@ -35,8 +34,8 @@ type SumbitTxResponse struct {
 
 func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 
-	inputs := make([]types.TxInput, len(req.TxInputs))
-	outputs := make([]types.TxOutput, len(req.TxOutputs))
+	var inputs []types.TxInput
+	var outputs []types.TxOutput
 
 	for _, inp := range req.TxInputs {
 		b, err := hex.DecodeString(inp.SpendOutputId)
@@ -95,7 +94,7 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 	//check input rel utxo
 	//set spend data
 	for _, input := range tx.TxInput {
-		if utxo, err := core.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
+		if utxo, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
 			return nil, err
 		} else {
 			input.SetSpend(utxo)

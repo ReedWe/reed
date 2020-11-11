@@ -1,13 +1,12 @@
-package core
+package blockchain
 
 import (
-	"github.com/tybc/blockchain"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 )
 
 
-func GetUtxoByOutputId(store *blockchain.Store, outputId types.Hash) (*types.UTXO, error) {
+func GetUtxoByOutputId(store *Store, outputId types.Hash) (*types.UTXO, error) {
 	id := outputId[:]
 	utxo, err := (*store).GetUtxo(id)
 	if utxo == nil || err != nil {

@@ -4,10 +4,10 @@ import "github.com/tybc/crypto"
 
 //id = Hash(input1.id,input2.id,...)
 type Tx struct {
-	ID Hash
+	ID Hash `json:"id"`
 
-	TxInput  []TxInput
-	TxOutput []TxOutput
+	TxInput  []TxInput  `json:"input"`
+	TxOutput []TxOutput `json:"output"`
 }
 
 func (tx *Tx) SetID() error {

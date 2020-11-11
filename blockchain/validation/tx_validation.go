@@ -3,7 +3,6 @@ package validation
 import (
 	"bytes"
 	"github.com/tybc/blockchain"
-	"github.com/tybc/core"
 	"github.com/tybc/core/types"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
@@ -34,7 +33,7 @@ func ValidateTx(chain *blockchain.Chain, tx *types.Tx) error {
 
 func validateInput(chain *blockchain.Chain, inputs *[]types.TxInput) error {
 	for _, input := range *inputs {
-		if _, err := core.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
+		if _, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
 			return errors.Wrap(validationInputErr, err)
 		}
 		if len(input.ScriptSig) != (64 + 32) {

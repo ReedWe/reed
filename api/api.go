@@ -5,8 +5,7 @@ import (
 	"fmt"
 	dbm "github.com/tendermint/tmlibs/db"
 	bc "github.com/tybc/blockchain"
-	txbuilder2 "github.com/tybc/blockchain/tx/txbuilder"
-	"github.com/tybc/core"
+	"github.com/tybc/blockchain/tx/txbuilder"
 	"github.com/tybc/database/leveldb"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
@@ -48,7 +47,7 @@ func NewApi() *API {
 		Handler: mux,
 	}
 
-	txpool := core.NewTxpool(leveldbStore)
+	txpool := bc.NewTxpool(leveldbStore)
 	api.Chain = bc.Chain{Store: leveldbStore, Txpool: txpool}
 	api.Server = httpServer
 
@@ -93,13 +92,13 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 		PrintErrorRes(writer, err)
 		return
 	} else {
-		m := &txbuilder2.SubmitTxRequest{}
+		m := &txbuilder.SubmitTxRequest{}
 		err := json.Unmarshal(data, m)
 		if err != nil {
 			PrintErrorRes(writer, err)
 			return
 		}
-		txResponse, err := txbuilder2.SubmitTx(&a.Chain, m)
+		txResponse, err := txbuilder.SubmitTx(&a.Chain, m)
 		if err != nil {
 			log.Logger.Error(err.Error())
 			PrintErrorRes(writer, err.Error())
