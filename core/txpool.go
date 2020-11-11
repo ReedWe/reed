@@ -20,6 +20,7 @@ func NewTxpool(store bc.Store) *Txpool {
 	}
 }
 
+
 func (tp *Txpool) ExistOutput(hash types.Hash) bool {
 	tp.mtx.RLock()
 	defer tp.mtx.RUnlock()

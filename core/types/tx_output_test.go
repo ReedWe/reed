@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/hex"
 	"github.com/tybc/crypto"
 	"github.com/tybc/vm"
@@ -28,7 +29,7 @@ func TestOutputLockingScript(t *testing.T) {
 
 	pubHash := crypto.Sha256(pub)
 
-	if hex.EncodeToString(pubHash) != hex.EncodeToString(script[2:34]) {
+	if !bytes.Equal(script[2:34], pubHash) {
 		t.Error("script third part is not Hash data")
 	}
 
