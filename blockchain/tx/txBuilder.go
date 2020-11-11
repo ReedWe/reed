@@ -107,13 +107,14 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 
 	//sign scriptSig
 	for _, input := range tx.TxInput {
-		input.SetScriptSig(wt, tx.ID)
+		input.SetScriptSig(wt, &tx.ID)
 	}
 
-	//set outpu id
+	//set output id
 	//locking script
 	for _, output := range tx.TxOutput {
 		output.SetID(&tx.ID)
+		output.SetLockingScript()
 	}
 
 	//TODO check if exist on txpool

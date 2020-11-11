@@ -26,7 +26,7 @@ func (txInput *TxInput) SetSpend(utxo *UTXO) {
 
 func (txInput *TxInput) SetID() error {
 	if txInput.ScriptSig == nil {
-		return errors.Wrap(inputErr, "txinput ScriptSig empty")
+		return errors.Wrap(inputErr, "ScriptSig empty")
 	}
 	b := bytes.Join([][]byte{
 		txInput.SpendOutputId[:],

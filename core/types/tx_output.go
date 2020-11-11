@@ -2,7 +2,9 @@ package types
 
 import (
 	"bytes"
+	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
+	"github.com/tybc/vm"
 )
 
 // id = Hash(tx.id + address)
@@ -27,6 +29,6 @@ func (output *TxOutput) SetID(txId *Hash) {
 }
 
 func (output *TxOutput) SetLockingScript() error {
-
+	output.ScriptPk = vm.BuildP2PKHScript(crypto.Sha256(output.Address))
 	return nil
 }
