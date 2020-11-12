@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"github.com/tybc/crypto"
 	"github.com/tybc/wallet"
@@ -18,18 +19,28 @@ var (
 
 func TestTxInput_GenerateID(t *testing.T) {
 	input := mockTxInput()
-	id, err := input.GenerateID()
-	if err != nil {
-		t.Error(err)
-	}
+	id := input.GenerateID()
+
+	split := []byte(":")
+	var sourcePosByte = make([]byte, 4)
+	binary.LittleEndian.PutUint32(sourcePosByte, 0)
+
+	var amountByte = make([]byte, 8)
+	binary.LittleEndian.PutUint64(amountByte, 10)
 
 	b := bytes.Join([][]byte{
 		spoutId,
+		split,
 		spsrcId,
+		split,
+		sourcePosByte,
+		split,
+		amountByte,
+		split,
 		scriptPk,
 	}, []byte{})
 	h := BytesToHash(crypto.Sha256(b))
-	if !bytes.Equal((*id).Bytes(), h.Bytes()) {
+	if !bytes.Equal(id.Bytes(), h.Bytes()) {
 		t.Error("not equal")
 	}
 

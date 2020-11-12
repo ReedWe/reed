@@ -28,6 +28,8 @@ func ValidateTx(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
+	//TODO asset amount equal
+
 	return nil
 }
 

@@ -13,7 +13,70 @@ var (
 	ErrSubmitTx = errors.New("sumbit tx")
 )
 
-func MapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
+func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
+
+	if len(reqTx.TxInputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
+	}
+
+	if len(reqTx.TxOutputs) == 0 {
+		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
+	}
+
+	// get wallet
+	wt, err := wallet.My(reqTx.Password)
+	if err != nil {
+		log.Logger.Infof("pub %s", wt.Pub)
+		return nil, err
+	}
+
+	// request data map to tx
+	tx, err := mapTx(reqTx)
+	if err != nil {
+		return nil, err
+	}
+
+	//check input rel utxo
+	//set spend data
+	for _, input := range tx.TxInput {
+		if utxo, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
+			return nil, err
+		} else {
+			input.SetSpend(utxo)
+		}
+	}
+
+	//tx ID
+	txId, err := tx.GenerateID()
+	if err != nil {
+		return nil, err
+	}
+	tx.ID = *txId
+
+	for _, input := range tx.TxInput {
+		//ScriptSig
+		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
+		if err != nil {
+			return nil, err
+		}
+		input.ScriptSig = *scriptSig
+
+		//ID
+		input.ID = input.GenerateID()
+	}
+
+	//set output id
+	//locking script
+	for _, output := range tx.TxOutput {
+		output.ID = *output.GenerateID(&tx.ID)
+		output.ScriptPk = output.GenerateLockingScript()
+	}
+
+	//TODO check if exist on txpool
+	return nil, nil
+}
+
+func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 
 	var inputs []types.TxInput
 	var outputs []types.TxOutput
@@ -47,71 +110,4 @@ func MapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	}
 
 	return tx, nil
-}
-
-func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
-
-	if len(reqTx.TxInputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
-	}
-
-	if len(reqTx.TxOutputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
-	}
-
-	// get wallet
-	wt, err := wallet.My(reqTx.Password)
-	if err != nil {
-		log.Logger.Infof("pub %s", wt.Pub)
-		return nil, err
-	}
-
-	// request data map to tx
-	tx, err := MapTx(reqTx)
-	if err != nil {
-		return nil, err
-	}
-
-	//check input rel utxo
-	//set spend data
-	for _, input := range tx.TxInput {
-		if utxo, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
-			return nil, err
-		} else {
-			input.SetSpend(utxo)
-		}
-	}
-
-	//tx ID
-	txId, err := tx.GenerateID()
-	if err != nil {
-		return nil, err
-	}
-	tx.ID = *txId
-
-	for _, input := range tx.TxInput {
-		//ScriptSig
-		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
-		if err != nil {
-			return nil, err
-		}
-		input.ScriptSig = *scriptSig
-
-		//ID
-		id, err := input.GenerateID()
-		if err != nil {
-			return nil, err
-		}
-		input.ID = *id
-	}
-
-	//set output id
-	//locking script
-	for _, output := range tx.TxOutput {
-		output.ID = *output.GenerateID(&tx.ID)
-		output.ScriptPk = output.GenerateLockingScript()
-	}
-
-	//TODO check if exist on txpool
-	return nil, nil
 }

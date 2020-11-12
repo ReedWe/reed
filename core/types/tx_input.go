@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
 	"github.com/tybc/wallet"
@@ -24,18 +25,28 @@ func (txInput *TxInput) SetSpend(utxo *UTXO) {
 	txInput.ScriptPk = utxo.ScriptPk
 }
 
-func (txInput *TxInput) GenerateID() (*Hash, error) {
-	if txInput.ScriptSig == nil {
-		return nil, errors.Wrap(inputErr, "ScriptSig empty")
-	}
+func (txInput *TxInput) GenerateID() Hash {
+	split := []byte(":")
+	var sourcePosByte = make([]byte, 4)
+	binary.LittleEndian.PutUint32(sourcePosByte, txInput.SourcePos)
+
+	var amountByte = make([]byte, 8)
+	binary.LittleEndian.PutUint64(amountByte, txInput.Amount)
+
 	b := bytes.Join([][]byte{
 		txInput.SpendOutputId.Bytes(),
+		split,
 		txInput.SoureId.Bytes(),
+		split,
+		sourcePosByte,
+		split,
+		amountByte,
+		split,
 		txInput.ScriptPk,
 	}, []byte{})
 
 	h := BytesToHash(crypto.Sha256(b))
-	return &h, nil
+	return h
 }
 
 func (txInput *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
