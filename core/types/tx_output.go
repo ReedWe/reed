@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"github.com/tybc/crypto"
 	"github.com/tybc/vm"
 )
@@ -15,15 +14,11 @@ type TxOutput struct {
 	ScriptPk   []byte `json:"scriptPK"`
 }
 
-func (output *TxOutput) SetID(txId *Hash) {
-	b := bytes.Join([][]byte{
-		(*txId).Bytes(),
-		output.Address,
-	}, []byte{})
-	output.ID = BytesToHash(b)
+func (output *TxOutput) GenerateID(txId *Hash) *Hash {
+	h := BytesToHash(crypto.Sha256((*txId).Bytes(), output.Address))
+	return &h
 }
 
-func (output *TxOutput) SetLockingScript() error {
-	output.ScriptPk = vm.BuildP2PKHScript(crypto.Sha256(output.Address))
-	return nil
+func (output *TxOutput) GenerateLockingScript() []byte {
+	return vm.BuildP2PKHScript(crypto.Sha256(output.Address))
 }

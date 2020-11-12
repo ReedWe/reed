@@ -108,8 +108,8 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	//set output id
 	//locking script
 	for _, output := range tx.TxOutput {
-		output.SetID(&tx.ID)
-		output.SetLockingScript()
+		output.ID = *output.GenerateID(&tx.ID)
+		output.ScriptPk = output.GenerateLockingScript()
 	}
 
 	//TODO check if exist on txpool

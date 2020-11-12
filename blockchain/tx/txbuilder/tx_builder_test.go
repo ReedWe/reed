@@ -25,7 +25,6 @@ func TestMapTx(t *testing.T) {
 	fmt.Println(string(marshal))
 }
 
-
 func TestSetScriptSig(t *testing.T) {
 
 }
