@@ -1,11 +1,12 @@
 package types
 
 import (
+	"bytes"
+	"encoding/binary"
 	"github.com/tybc/crypto"
 	"github.com/tybc/vm"
 )
 
-// id = Hash(tx.id + address)
 type TxOutput struct {
 	ID         Hash   `json:"id"`
 	IsCoinBase bool   `json:"isCoinBase"`
@@ -14,9 +15,29 @@ type TxOutput struct {
 	ScriptPk   []byte `json:"scriptPK"`
 }
 
-func (output *TxOutput) GenerateID(txId *Hash) *Hash {
-	h := BytesToHash(crypto.Sha256((*txId).Bytes(), output.Address))
-	return &h
+func (output *TxOutput) GenerateID() Hash {
+	//TODO maybe need: len(output.ScriptPK ) >0
+	split := []byte(":")
+
+	isCoinBaseByte := []byte{1}
+	if !output.IsCoinBase {
+		isCoinBaseByte = []byte{0}
+	}
+
+	var amountByte = make([]byte, 8)
+	binary.LittleEndian.PutUint64(amountByte, output.Amount)
+
+	datas := bytes.Join([][]byte{
+		isCoinBaseByte,
+		split,
+		output.Address,
+		split,
+		amountByte,
+		split,
+		output.ScriptPk,
+	}, []byte{})
+
+	return BytesToHash(crypto.Sha256(datas))
 }
 
 func (output *TxOutput) GenerateLockingScript() []byte {

@@ -26,6 +26,7 @@ func (txInput *TxInput) SetSpend(utxo *UTXO) {
 }
 
 func (txInput *TxInput) GenerateID() Hash {
+	//TODO maybe need: len(txInput.ScriptPk) >0
 	split := []byte(":")
 	var sourcePosByte = make([]byte, 4)
 	binary.LittleEndian.PutUint32(sourcePosByte, txInput.SourcePos)

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrSubmitTx = errors.New("sumbit tx")
+	ErrSubmitTx = errors.New("sumbit transaction")
 )
 
 func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
@@ -36,14 +36,27 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 		return nil, err
 	}
 
-	//check input rel utxo
 	//set spend data
+	//check input rel utxo
 	for _, input := range tx.TxInput {
 		if utxo, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
 			return nil, err
 		} else {
 			input.SetSpend(utxo)
 		}
+	}
+
+	//input ID
+	for _, input := range tx.TxInput {
+		//ID
+		input.ID = input.GenerateID()
+	}
+
+	//output ID
+	//locking script
+	for _, output := range tx.TxOutput {
+		output.ScriptPk = output.GenerateLockingScript()
+		output.ID = output.GenerateID()
 	}
 
 	//tx ID
@@ -53,23 +66,13 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	}
 	tx.ID = *txId
 
+	//ScriptSig
 	for _, input := range tx.TxInput {
-		//ScriptSig
 		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
 		if err != nil {
 			return nil, err
 		}
 		input.ScriptSig = *scriptSig
-
-		//ID
-		input.ID = input.GenerateID()
-	}
-
-	//set output id
-	//locking script
-	for _, output := range tx.TxOutput {
-		output.ID = *output.GenerateID(&tx.ID)
-		output.ScriptPk = output.GenerateLockingScript()
 	}
 
 	//TODO check if exist on txpool
@@ -110,4 +113,8 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	}
 
 	return tx, nil
+}
+
+func completeTx(tx *types.Tx) error {
+	return nil
 }

@@ -22,6 +22,10 @@ func (tx *Tx) GenerateID() (*Hash, error) {
 	for _, input := range tx.TxInput {
 		ids = append(ids, input.ID.Bytes())
 	}
+	for _, output := range tx.TxOutput {
+		ids = append(ids, output.ID.Bytes())
+	}
+
 	h := BytesToHash(crypto.Sha256(ids...))
 	return &h, nil
 }

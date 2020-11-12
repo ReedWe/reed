@@ -2,29 +2,37 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"github.com/tybc/crypto"
 	"github.com/tybc/vm"
 	"testing"
 )
 
-func TestTxOutput_SetID(t *testing.T) {
+func TestTxOutput_GenerateID(t *testing.T) {
 	var addr, _ = hex.DecodeString("c27f26c8bf818e5509abacfc20206d43fc0db6a415f20d48726eb8cd2888f68e")
+	var scriptPK, _ = hex.DecodeString("bf8776efb3367228d115c325a623b3fe6b359a87e45d25c98a506e203b0ec5b1fc0db6a415f20d48726eb8cd2888f68")
+	amt := uint64(199)
+	icb := false
 	output := &TxOutput{
-		Address: addr,
+		IsCoinBase: icb,
+		Amount:     amt,
+		Address:    addr,
+		ScriptPk:   scriptPK,
 	}
 
-	var txId, _ = hex.DecodeString("5afa5c9c2565999e687a88769a3347bb0eedb0083881042b86e471e86e06669a")
-	txIdHash := BytesToHash(txId)
+	id := output.GenerateID()
 
-	id := output.GenerateID(&txIdHash)
+	var amtByte = make([]byte, 8)
+	binary.LittleEndian.PutUint64(amtByte, amt)
 
 	var datas [][]byte
-	datas = append(datas, txId, addr)
+	split := []byte(":")
+	datas = append(datas, []byte{0}, split, addr, split, amtByte, split, scriptPK)
 
 	h := crypto.Sha256(datas...)
 
-	if !bytes.Equal((*id).Bytes(), h) {
+	if !bytes.Equal(id.Bytes(), h) {
 		t.Fatalf("GenerateID error")
 	}
 

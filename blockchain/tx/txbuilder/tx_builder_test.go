@@ -13,7 +13,7 @@ import (
 
 func TestMapTx(t *testing.T) {
 	req := mockReqTx()
-	tx, err := MapTx(req)
+	tx, err := mapTx(req)
 	if err != nil {
 		t.Error("map tx error")
 	}
