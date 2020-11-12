@@ -62,10 +62,10 @@ func TestTxOutput_SetLockingScript(t *testing.T) {
 		t.Error("script third part is not Hash data")
 	}
 
-	if script[34] != vm.OpEqualverify {
+	if script[34] != vm.OpEqualVerify {
 		t.Error("script fourth part is not OP_EQUALVERIFY")
 	}
-	if script[35] != vm.OpChecksig {
+	if script[35] != vm.OpCheckSig {
 		t.Error("script fifth part is not OP_CHECKSIG")
 	}
 

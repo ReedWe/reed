@@ -1,8 +1,9 @@
 package vm
 
+// reference bitcoin
 const (
 	OpDup         = 0x76
 	OpHash256     = 0xaa
-	OpEqualverify = 0x88
-	OpChecksig    = 0xac
+	OpEqualVerify = 0x88
+	OpCheckSig    = 0xac
 )

@@ -5,12 +5,11 @@ import (
 	"github.com/tybc/blockchain"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
-	"github.com/tybc/log"
 	"github.com/tybc/wallet"
 )
 
 var (
-	ErrSubmitTx = errors.New("sumbit transaction")
+	ErrSubmitTx = errors.New("submit transaction")
 )
 
 func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
@@ -26,7 +25,6 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	// get wallet
 	wt, err := wallet.My(reqTx.Password)
 	if err != nil {
-		log.Logger.Infof("pub %s", wt.Pub)
 		return nil, err
 	}
 

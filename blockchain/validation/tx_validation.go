@@ -68,10 +68,10 @@ func validateOutput(outputs *[]types.TxOutput) error {
 			return errors.Wrapf(validationOutputErr, "ScriptPk third part is not Hash data.output ID %x", output.ID)
 		}
 
-		if script[34] != vm.OpEqualverify {
+		if script[34] != vm.OpEqualVerify {
 			return errors.Wrapf(validationOutputErr, "ScriptPk fourth part is not OP_EQUALVERIFY.output ID %x", output.ID)
 		}
-		if script[35] != vm.OpChecksig {
+		if script[35] != vm.OpCheckSig {
 			return errors.Wrapf(validationOutputErr, "ScriptPk fifth part is not OP_CHECKSIG.output ID %x", output.ID)
 		}
 	}
