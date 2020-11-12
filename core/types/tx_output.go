@@ -17,7 +17,7 @@ type TxOutput struct {
 
 func (output *TxOutput) SetID(txId *Hash) {
 	b := bytes.Join([][]byte{
-		(*txId)[:],
+		(*txId).Bytes(),
 		output.Address,
 	}, []byte{})
 	output.ID = BytesToHash(b)

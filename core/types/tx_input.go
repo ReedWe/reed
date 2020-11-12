@@ -24,31 +24,32 @@ func (txInput *TxInput) SetSpend(utxo *UTXO) {
 	txInput.ScriptPk = utxo.ScriptPk
 }
 
-func (txInput *TxInput) SetID() error {
+func (txInput *TxInput) GenerateID() (*Hash, error) {
 	if txInput.ScriptSig == nil {
-		return errors.Wrap(inputErr, "ScriptSig empty")
+		return nil, errors.Wrap(inputErr, "ScriptSig empty")
 	}
 	b := bytes.Join([][]byte{
-		txInput.SpendOutputId[:],
-		txInput.SoureId[:],
+		txInput.SpendOutputId.Bytes(),
+		txInput.SoureId.Bytes(),
 		txInput.ScriptPk,
 	}, []byte{})
-	txInput.ID = BytesToHash(crypto.Sha256(b))
-	return nil
+
+	h := BytesToHash(crypto.Sha256(b))
+	return &h, nil
 }
 
-func (txInput *TxInput) SetScriptSig(wt *wallet.Wallet, txId *Hash) error {
+func (txInput *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
 	message := bytes.Join([][]byte{
-		txInput.ID[:],
-		(*txId)[:],
+		txInput.ID.Bytes(),
+		(*txId).Bytes(),
 	}, []byte{})
 
 	sig := crypto.Sign(wt.Priv, message)
 
 	//scriptSig = <signature> <public key>
-	txInput.ScriptSig = bytes.Join([][]byte{
+	scriptSig := bytes.Join([][]byte{
 		sig,
 		wt.Pub,
 	}, []byte{})
-	return nil
+	return &scriptSig, nil
 }

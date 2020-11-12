@@ -6,6 +6,7 @@ import (
 	dbm "github.com/tendermint/tmlibs/db"
 	bc "github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/tx/txbuilder"
+	"github.com/tybc/core/types"
 	"github.com/tybc/database/leveldb"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
@@ -92,7 +93,7 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 		PrintErrorRes(writer, err)
 		return
 	} else {
-		m := &txbuilder.SubmitTxRequest{}
+		m := &types.SubmitTxRequest{}
 		err := json.Unmarshal(data, m)
 		if err != nil {
 			PrintErrorRes(writer, err)

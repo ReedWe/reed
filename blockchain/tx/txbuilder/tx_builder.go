@@ -13,26 +13,7 @@ var (
 	ErrSubmitTx = errors.New("sumbit tx")
 )
 
-type SubmitTxRequest struct {
-	Password  string      `json:"wallet_password"`
-	TxInputs  []ReqInput  `json:"tx_inputs"`
-	TxOutputs []ReqOutput `json:"tx_outputs"`
-}
-
-type ReqInput struct {
-	SpendOutputId string `json:"spend_output_id"`
-}
-
-type ReqOutput struct {
-	Address string `json:"address"`
-	Amount  uint64 `json:"amount"`
-}
-
-type SumbitTxResponse struct {
-	TxId string `json:"tx_id"`
-}
-
-func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
+func MapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 
 	var inputs []types.TxInput
 	var outputs []types.TxOutput
@@ -68,7 +49,7 @@ func (req *SubmitTxRequest) MapTx() (*types.Tx, error) {
 	return tx, nil
 }
 
-func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxResponse, error) {
+func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
 
 	if len(reqTx.TxInputs) == 0 {
 		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
@@ -86,7 +67,7 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 	}
 
 	// request data map to tx
-	tx, err := reqTx.MapTx()
+	tx, err := MapTx(reqTx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,15 +79,30 @@ func SubmitTx(chain *blockchain.Chain, reqTx *SubmitTxRequest) (*SumbitTxRespons
 			return nil, err
 		} else {
 			input.SetSpend(utxo)
-			input.SetID()
 		}
 	}
 
-	tx.SetID()
+	//tx ID
+	txId, err := tx.GenerateID()
+	if err != nil {
+		return nil, err
+	}
+	tx.ID = *txId
 
-	//sign scriptSig
 	for _, input := range tx.TxInput {
-		input.SetScriptSig(wt, &tx.ID)
+		//ScriptSig
+		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
+		if err != nil {
+			return nil, err
+		}
+		input.ScriptSig = *scriptSig
+
+		//ID
+		id, err := input.GenerateID()
+		if err != nil {
+			return nil, err
+		}
+		input.ID = *id
 	}
 
 	//set output id

@@ -1,6 +1,9 @@
 package types
 
-import "github.com/tybc/crypto"
+import (
+	"github.com/tybc/crypto"
+	"github.com/tybc/errors"
+)
 
 //id = Hash(input1.id,input2.id,...)
 type Tx struct {
@@ -10,13 +13,17 @@ type Tx struct {
 	TxOutput []TxOutput `json:"output"`
 }
 
-func (tx *Tx) SetID() error {
-	ids := make([][]byte, len(tx.TxInput))
-	for _, input := range tx.TxInput {
-		ids = append(ids, input.ID[:])
+func (tx *Tx) GenerateID() (*Hash, error) {
+	if len(tx.TxInput) == 0 {
+		return nil, errors.New("tx input empty")
 	}
-	tx.ID = BytesToHash(crypto.Sha256(ids...))
-	return nil
+
+	var ids [][]byte
+	for _, input := range tx.TxInput {
+		ids = append(ids, input.ID.Bytes())
+	}
+	h := BytesToHash(crypto.Sha256(ids...))
+	return &h, nil
 }
 
 //func (tx *Transaction) sign() {
