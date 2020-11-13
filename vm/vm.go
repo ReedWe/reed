@@ -47,27 +47,27 @@ func (v *VM) Run() error {
 		if pointer == scriptLen {
 			break
 		}
-		item := v.Script[pointer : pointer+1]
+		op := v.Script[pointer : pointer+1]
 		pointer++
 		switch {
-		case bytes.Equal(item, []byte{byte(vmcommon.OpPushData64)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpPushData64)}):
 			push(v.Script[pointer : pointer+64])
 			pointer += 64 - 1
-		case bytes.Equal(item, []byte{byte(vmcommon.OpPushData32)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpPushData32)}):
 			push(v.Script[pointer : pointer+32])
 			pointer += 32 - 1
-		case bytes.Equal(item, []byte{byte(vmcommon.OpDup)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpDup)}):
 			d := v.Stack[len(v.Stack)-1]
 			v.Stack = append(v.Stack, d)
-		case bytes.Equal(item, []byte{byte(vmcommon.OpHash256)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpHash256)}):
 			push(crypto.Sha256(pop()))
-		case bytes.Equal(item, []byte{byte(vmcommon.OpEqualVerify)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpEqualVerify)}):
 			a := pop()
 			b := pop()
 			if !bytes.Equal(a, b) {
 				return errors.Wrap(vmErr, "OP_EQUAL_VERIFY failed")
 			}
-		case bytes.Equal(item, []byte{byte(vmcommon.OpCheckSig)}):
+		case bytes.Equal(op, []byte{byte(vmcommon.OpCheckSig)}):
 			if ok := v.SignTx(pop(), pop()); !ok {
 				return errors.Wrap(vmErr, "OP_CHECK_SIG signature failed")
 			}
