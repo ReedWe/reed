@@ -42,9 +42,8 @@ func (v *VM) Run() error {
 	}
 
 	pointer := 0
-	end := false
-	for !end {
-		if pointer == scriptLen {
+	for {
+		if pointer >= scriptLen {
 			break
 		}
 		op := v.Script[pointer : pointer+1]
