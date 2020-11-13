@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/tybc/common/math"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
 )
@@ -28,6 +29,20 @@ func (tx *Tx) GenerateID() (*Hash, error) {
 
 	h := BytesToHash(crypto.Sha256(ids...))
 	return &h, nil
+}
+
+func (tx *Tx) IsAssetAmtEqual() (sumInput uint64, sumOutput uint64, err error) {
+	for _, input := range tx.TxInput {
+		if sumInput, err = math.AddUint64(sumInput, input.Amount); err != nil {
+			return 0, 0, err
+		}
+	}
+	for _, output := range tx.TxOutput {
+		if sumOutput, err = math.AddUint64(sumOutput, output.Amount); err != nil {
+			return 0, 0, err
+		}
+	}
+	return
 }
 
 //func (tx *Transaction) sign() {

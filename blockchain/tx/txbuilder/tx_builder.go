@@ -1,25 +1,28 @@
 package txbuilder
 
 import (
+	"crypto/ed25519"
 	"encoding/hex"
 	"github.com/tybc/blockchain"
+	"github.com/tybc/common/math"
 	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
 	"github.com/tybc/wallet"
 )
 
 var (
-	ErrSubmitTx = errors.New("submit transaction")
+	submitTxErr   = errors.New("submit transaction")
+	txAssetAmtErr = errors.New("transaction asset amount error")
 )
 
 func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
 
 	if len(reqTx.TxInputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no input data")
+		return nil, errors.WithDetail(submitTxErr, "no input data")
 	}
 
 	if len(reqTx.TxOutputs) == 0 {
-		return nil, errors.WithDetail(ErrSubmitTx, "no output data")
+		return nil, errors.WithDetail(submitTxErr, "no output data")
 	}
 
 	// get wallet
@@ -31,6 +34,10 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	// request data map to tx
 	tx, err := mapTx(reqTx)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = completeTx(tx, wt.Pub); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +92,7 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	for _, inp := range req.TxInputs {
 		b, err := hex.DecodeString(inp.SpendOutputId)
 		if err != nil {
-			return nil, errors.WithDetail(ErrSubmitTx, "invalid spend_output_id format")
+			return nil, errors.WithDetail(submitTxErr, "invalid spend_output_id format")
 		}
 		inputs = append(inputs, types.TxInput{
 			Spend: types.Spend{SpendOutputId: types.BytesToHash(b)},
@@ -95,7 +102,7 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	for _, iop := range req.TxOutputs {
 		addr, err := hex.DecodeString(iop.Address)
 		if err != nil {
-			return nil, errors.WithDetail(ErrSubmitTx, "invalid output.address format")
+			return nil, errors.WithDetail(submitTxErr, "invalid output.address format")
 		}
 
 		outputs = append(outputs, types.TxOutput{
@@ -113,6 +120,55 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	return tx, nil
 }
 
-func completeTx(tx *types.Tx) error {
+func completeTx(tx *types.Tx, pub ed25519.PublicKey) error {
+	if err := maybeFillSelfOutput(tx, pub); err != nil {
+		return err
+	}
+
+	newOutputs, err := mergeSameAddrOutput(tx.TxOutput)
+	if err != nil {
+		return err
+	}
+	tx.TxOutput = newOutputs
+
 	return nil
+}
+
+func maybeFillSelfOutput(tx *types.Tx, pub ed25519.PublicKey) error {
+	sumInput, sumOutput, err := tx.IsAssetAmtEqual()
+	if err != nil {
+		return err
+	}
+
+	if sumOutput > sumInput {
+		return errors.Wrap(txAssetAmtErr, "not enough inputs amount")
+	}
+	if sumInput > sumOutput {
+		// auto generate self output
+		tx.TxOutput = append(tx.TxOutput, types.TxOutput{
+			IsCoinBase: false,
+			Address:    pub,
+			Amount:     sumInput - sumOutput,
+		})
+	}
+	return nil
+}
+
+func mergeSameAddrOutput(outputs []types.TxOutput) ([]types.TxOutput, error) {
+	var newOutputs []types.TxOutput
+	addrMap := map[string]*types.TxOutput{}
+	var err error
+	for _, output := range outputs {
+		if item, ok := addrMap[string(output.Address)]; ok {
+			//exist same address output,merge
+			item.Amount, err = math.AddUint64(item.Amount, output.Amount)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			newOutputs = append(newOutputs, output)
+			addrMap[string(output.Address)] = &output
+		}
+	}
+	return newOutputs, nil
 }
