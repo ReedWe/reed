@@ -1,6 +1,6 @@
 package blockchain
 
-import "github.com/tybc/core/types"
+import "github.com/tybc/types"
 
 type Store interface {
 	GetUtxo(id []byte) (*types.UTXO, error)

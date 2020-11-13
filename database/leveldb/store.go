@@ -3,8 +3,8 @@ package leveldb
 import (
 	"github.com/golang/protobuf/proto"
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
+	"github.com/tybc/types"
 )
 
 var (

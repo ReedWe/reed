@@ -3,7 +3,7 @@ package txbuilder
 import (
 	"github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/validation"
-	"github.com/tybc/core/types"
+	"github.com/tybc/types"
 )
 
 func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {

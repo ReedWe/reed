@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"github.com/tybc/core/types"
+	"github.com/tybc/types"
 	"sync"
 )
 

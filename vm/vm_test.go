@@ -3,8 +3,8 @@ package vm
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/tybc/core/types"
 	"github.com/tybc/crypto"
+	"github.com/tybc/types"
 	"github.com/tybc/wallet"
 	"testing"
 )

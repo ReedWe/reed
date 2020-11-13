@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"github.com/tybc/blockchain"
 	"github.com/tybc/common/math"
-	"github.com/tybc/core/types"
 	"github.com/tybc/errors"
+	"github.com/tybc/types"
 	"github.com/tybc/wallet"
 )
 

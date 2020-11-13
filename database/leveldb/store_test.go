@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tybc/core/types"
+	"github.com/tybc/types"
 	"os"
 	"testing"
 )

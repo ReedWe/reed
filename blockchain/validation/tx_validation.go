@@ -3,10 +3,10 @@ package validation
 import (
 	"bytes"
 	"github.com/tybc/blockchain"
-	"github.com/tybc/core/types"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
+	"github.com/tybc/types"
 	"github.com/tybc/vm/vmcommon"
 )
 
