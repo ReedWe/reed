@@ -16,7 +16,7 @@ var (
 type TxInput struct {
 	ID Hash `json:"id"`
 	Spend
-	ScriptSig []byte `json:"scriptSig"` //Sig(Hash(TxInput.Id + tx.Id))
+	ScriptSig []byte `json:"scriptSig"`
 }
 
 func (txInput *TxInput) SetSpend(utxo *UTXO) {

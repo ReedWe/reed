@@ -4,7 +4,6 @@ import (
 	_ "github.com/tybc/crypto"
 )
 
-// id = Hash(field1,field2,...)
 type Spend struct {
 	SpendOutputId Hash   `json:"spendOutputId"`
 	SoureId       Hash   `json:"sourceId"`  //rel utxo.SourceId

@@ -6,7 +6,7 @@ import (
 	"github.com/tybc/errors"
 )
 
-//id = Hash(input1.id,input2.id,...)
+//id = Hash(input...,output...)
 type Tx struct {
 	ID Hash `json:"id"`
 

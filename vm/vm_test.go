@@ -26,7 +26,7 @@ func TestVM_Run(t *testing.T) {
 			txId,
 		}, []byte{})
 
-		return crypto.Verify(pub, message, sig)
+		return crypto.Verify(pk, message, sig)
 	}
 
 	vm := NewVirtualMachine(mockScriptData(), mockScriptPKData(), signFunc)

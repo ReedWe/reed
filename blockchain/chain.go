@@ -1,6 +1,8 @@
 package blockchain
 
+import "github.com/tybc/blockchain/txpool"
+
 type Chain struct {
 	Store  Store
-	Txpool *Txpool
+	Txpool *txpool.Txpool
 }

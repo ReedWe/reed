@@ -1,6 +1,7 @@
 package leveldb
 
 import (
+	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/tybc/errors"
@@ -8,6 +9,7 @@ import (
 )
 
 var (
+	txPrefix   = "TX:"
 	utxoPrefix = "UTXO:"
 	storeErr   = errors.New("leveldb error")
 )
@@ -22,13 +24,30 @@ func NewStore(db dbm.DB) *Store {
 	}
 }
 
-func getKey(id *[]byte) []byte {
+func getTxKey(id *[]byte) []byte {
+	return []byte(txPrefix + string(*id))
+}
+
+func getUtxoKey(id *[]byte) []byte {
 	return []byte(utxoPrefix + string(*id))
+}
+
+func (store *Store) GetTx(id []byte) (*types.Tx, error) {
+	b := store.db.Get(getTxKey(&id))
+	if b == nil {
+		return nil, nil
+	}
+	tx := &types.Tx{}
+
+	if err := json.Unmarshal(b, tx); err != nil {
+		return nil, errors.Wrapf(storeErr, "tx(id=%x) unmarshal failed", id)
+	}
+	return tx, nil
 }
 
 func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	var utxo types.UTXO
-	data := store.db.Get(getKey(&id))
+	data := store.db.Get(getUtxoKey(&id))
 	if data == nil {
 		return nil, errors.Wrapf(storeErr, "utxo(id=%x) does not exists", id)
 	}
@@ -48,8 +67,8 @@ func (store *Store) SaveUtxo(utxo *types.TxOutput) {
 	//	return
 	//}
 	//
-	//k := getKey(&utxo.Id)
+	//k := getUtxoKey(&utxo.Id)
 	//fmt.Printf("Key %x \n", k)
 	//
-	//store.db.Set(getKey(&utxo.Id), b)
+	//store.db.Set(getUtxoKey(&utxo.Id), b)
 }

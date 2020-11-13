@@ -7,6 +7,7 @@ import (
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
 	"github.com/tybc/types"
+	"github.com/tybc/vm"
 	"github.com/tybc/vm/vmcommon"
 )
 
@@ -18,9 +19,7 @@ var (
 func ValidateTx(chain *blockchain.Chain, tx *types.Tx) error {
 	log.Logger.Infof("ValidateTx %v", *tx)
 
-	//TODO check exist in tx pool
-
-	if err := validateInput(chain, &tx.TxInput); err != nil {
+	if err := validateInput(chain, &tx.TxInput, tx.ID); err != nil {
 		return err
 	}
 
@@ -35,7 +34,7 @@ func ValidateTx(chain *blockchain.Chain, tx *types.Tx) error {
 	return nil
 }
 
-func validateInput(chain *blockchain.Chain, inputs *[]types.TxInput) error {
+func validateInput(chain *blockchain.Chain, inputs *[]types.TxInput, txId types.Hash) error {
 	spendOutputMap := map[string]*types.TxInput{}
 	for _, input := range *inputs {
 		key := string(input.SoureId.Bytes()) + string(input.SourcePos)
@@ -49,7 +48,19 @@ func validateInput(chain *blockchain.Chain, inputs *[]types.TxInput) error {
 		if len(input.ScriptSig) != (64 + 32 + 2) {
 			return errors.Wrapf(validationInputErr, "invalid scriptSig len(%d).input ID %x", len(input.ScriptSig), input.ID)
 		}
-		//TODO RUN VM
+
+		signFunc := func(pk []byte, sig []byte) bool {
+			message := bytes.Join([][]byte{
+				input.ID.Bytes(),
+				txId.Bytes(),
+			}, []byte{})
+			return crypto.Verify(pk, message, sig)
+		}
+
+		virtualMachine := vm.NewVirtualMachine(input.ScriptSig, input.ScriptPk, signFunc)
+		if err := virtualMachine.Run(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
