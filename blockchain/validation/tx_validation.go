@@ -7,7 +7,7 @@ import (
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
 	"github.com/tybc/log"
-	"github.com/tybc/vm"
+	"github.com/tybc/vm/vmcommon"
 )
 
 var (
@@ -28,17 +28,25 @@ func ValidateTx(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
-	//TODO asset amount equal
+	if _, _, err := tx.IsAssetAmtEqual(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func validateInput(chain *blockchain.Chain, inputs *[]types.TxInput) error {
+	spendOutputMap := map[string]*types.TxInput{}
 	for _, input := range *inputs {
+		key := string(input.SoureId.Bytes()) + string(input.SourcePos)
+		if _, ok := spendOutputMap[key]; ok {
+			return errors.Wrapf(validationInputErr, "repeat utxos,source id=%x", input.SoureId)
+		}
+
 		if _, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
 			return errors.Wrap(validationInputErr, err)
 		}
-		if len(input.ScriptSig) != (64 + 32) {
+		if len(input.ScriptSig) != (64 + 32 + 2) {
 			return errors.Wrapf(validationInputErr, "invalid scriptSig len(%d).input ID %x", len(input.ScriptSig), input.ID)
 		}
 		//TODO RUN VM
@@ -53,26 +61,30 @@ func validateOutput(outputs *[]types.TxOutput) error {
 		}
 
 		script := output.ScriptPk
-		if len(script) != (32 + 4) {
+		if len(script) != (32 + 5) {
 			return errors.Wrapf(validationOutputErr, "invalid ScriptPk len(%d).expect 36", len(script))
 		}
-		if script[0] != vm.OpDup {
+		if script[0] != vmcommon.OpDup {
 			return errors.Wrapf(validationOutputErr, "ScriptPk first part is not OP_DUP.output ID %x", output.ID)
 		}
-		if script[1] != vm.OpHash256 {
+		if script[1] != vmcommon.OpHash256 {
 			return errors.Wrapf(validationOutputErr, "ScriptPk second part is not OP_HASH256.output ID %x", output.ID)
 		}
 
-		pubHash := crypto.Sha256(output.Address)
-		if !bytes.Equal(script[2:34], pubHash) {
-			return errors.Wrapf(validationOutputErr, "ScriptPk third part is not Hash data.output ID %x", output.ID)
+		if script[2] != vmcommon.OpPushData32 {
+			return errors.Wrapf(validationOutputErr, "ScriptPk third part is not OP_PUSHDATA32.output ID %x", output.ID)
 		}
 
-		if script[34] != vm.OpEqualVerify {
-			return errors.Wrapf(validationOutputErr, "ScriptPk fourth part is not OP_EQUALVERIFY.output ID %x", output.ID)
+		pubHash := crypto.Sha256(output.Address)
+		if !bytes.Equal(script[3:35], pubHash) {
+			return errors.Wrapf(validationOutputErr, "ScriptPk fourth part is not Hash data.output ID %x", output.ID)
 		}
-		if script[35] != vm.OpCheckSig {
-			return errors.Wrapf(validationOutputErr, "ScriptPk fifth part is not OP_CHECKSIG.output ID %x", output.ID)
+
+		if script[35] != vmcommon.OpEqualVerify {
+			return errors.Wrapf(validationOutputErr, "ScriptPk fifth part is not OP_EQUALVERIFY.output ID %x", output.ID)
+		}
+		if script[36] != vmcommon.OpCheckSig {
+			return errors.Wrapf(validationOutputErr, "ScriptPk sixth part is not OP_CHECKSIG.output ID %x", output.ID)
 		}
 	}
 	return nil

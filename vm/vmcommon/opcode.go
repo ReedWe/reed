@@ -1,7 +1,9 @@
-package vm
+package vmcommon
 
-// reference bitcoin
 const (
+	OpPushData32 = 0x40
+	OpPushData64 = 0x41
+
 	OpDup         = 0x76
 	OpHash256     = 0xaa
 	OpEqualVerify = 0x88

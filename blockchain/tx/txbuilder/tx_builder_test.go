@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/tybc/core/types"
 	"github.com/tybc/crypto"
-	"github.com/tybc/vm"
+	"github.com/tybc/vm/vmcommon"
 	"github.com/tybc/wallet"
 	"testing"
 )
@@ -40,7 +40,7 @@ func mockUTXO() *types.UTXO {
 		SourcePos: 0,
 		Amount:    19,
 		Address:   var3,
-		ScriptPk:  vm.BuildP2PKHScript(crypto.Sha256(var3)),
+		ScriptPk:  vmcommon.BuildP2PKHScript(crypto.Sha256(var3)),
 	}
 
 	return utxo

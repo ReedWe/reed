@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/tybc/crypto"
+	"github.com/tybc/vm/vmcommon"
 	"github.com/tybc/wallet"
 	"testing"
 )
@@ -67,13 +68,13 @@ func TestTxInput_GenerateScriptSig(t *testing.T) {
 
 	//scriptSig = signature(64) + public key(32) = 96
 
-	if len(*scriptSig) != 96 {
+	if len(*scriptSig) != 96+2 {
 		t.Error("invalid scriptSig len")
 	}
 
-	signature := (*scriptSig)[:64]
+	signature := (*scriptSig)[1:65]
 
-	if !bytes.Equal((*scriptSig)[64:], wt.Pub) {
+	if !bytes.Equal((*scriptSig)[(64+2):], wt.Pub) {
 		t.Error("scriptSig error:last len(32) not equal public key")
 	}
 
@@ -89,7 +90,9 @@ func TestTxInput_GenerateScriptSig(t *testing.T) {
 	expectSig := crypto.Sign(wt.Priv, message)
 
 	expectScriptSig := bytes.Join([][]byte{
+		{byte(vmcommon.OpPushData64)},
 		expectSig,
+		{byte(vmcommon.OpPushData32)},
 		wt.Pub,
 	}, []byte{})
 

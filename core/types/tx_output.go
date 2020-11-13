@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/tybc/crypto"
-	"github.com/tybc/vm"
+	"github.com/tybc/vm/vmcommon"
 )
 
 type TxOutput struct {
@@ -41,5 +41,5 @@ func (output *TxOutput) GenerateID() Hash {
 }
 
 func (output *TxOutput) GenerateLockingScript() []byte {
-	return vm.BuildP2PKHScript(crypto.Sha256(output.Address))
+	return vmcommon.BuildP2PKHScript(crypto.Sha256(output.Address))
 }

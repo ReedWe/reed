@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/tybc/crypto"
-	"github.com/tybc/vm"
+	"github.com/tybc/vm/vmcommon"
 	"testing"
 )
 
@@ -46,27 +46,32 @@ func TestTxOutput_SetLockingScript(t *testing.T) {
 
 	script := o.GenerateLockingScript()
 
-	if len(script) != (32 + 4) {
+	//pk + 5op
+	if len(script) != (32 + 5) {
 		t.Errorf("script len error;actual len=%d", len(script))
 	}
-	if script[0] != vm.OpDup {
-		t.Error("script first part is not OP_DUP")
+	if script[0] != vmcommon.OpDup {
+		t.Error("script first part is not OpDup")
 	}
-	if script[1] != vm.OpHash256 {
-		t.Error("script second part is not OP_HASH256")
+	if script[1] != vmcommon.OpHash256 {
+		t.Error("script second part is not OpHash256")
+	}
+
+	if script[2] != vmcommon.OpPushData32 {
+		t.Error("script third part is not OpPushData32")
 	}
 
 	pubHash := crypto.Sha256(pub)
 
-	if !bytes.Equal(script[2:34], pubHash) {
-		t.Error("script third part is not Hash data")
+	if !bytes.Equal(script[3:35], pubHash) {
+		t.Error("script fourth part is not Hash data")
 	}
 
-	if script[34] != vm.OpEqualVerify {
-		t.Error("script fourth part is not OP_EQUALVERIFY")
+	if script[35] != vmcommon.OpEqualVerify {
+		t.Error("script fifth part is not OpEqualVerify")
 	}
-	if script[35] != vm.OpCheckSig {
-		t.Error("script fifth part is not OP_CHECKSIG")
+	if script[36] != vmcommon.OpCheckSig {
+		t.Error("script sixth part is not OpCheckSig")
 	}
 
 }

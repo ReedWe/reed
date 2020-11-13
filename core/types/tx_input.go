@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
+	"github.com/tybc/vm/vmcommon"
 	"github.com/tybc/wallet"
 )
 
@@ -60,7 +61,9 @@ func (txInput *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byt
 
 	//scriptSig = <signature> <public key>
 	scriptSig := bytes.Join([][]byte{
+		{byte(vmcommon.OpPushData64)},
 		sig,
+		{byte(vmcommon.OpPushData32)},
 		wt.Pub,
 	}, []byte{})
 	return &scriptSig, nil
