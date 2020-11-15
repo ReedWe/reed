@@ -55,3 +55,4 @@ func (tot *TxOutput) ValidateID() error {
 	}
 	return nil
 }
+

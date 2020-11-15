@@ -48,5 +48,11 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
+	//output utxo and save changed
+	utxos := blockchain.OutputsToUtxos(&tx.ID, &tx.TxOutput)
+	if err = blockchain.UtxoChange(&chain.Store, &tx.TxInput, utxos); err != nil {
+		return err
+	}
+
 	return nil
 }

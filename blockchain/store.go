@@ -9,5 +9,5 @@ type Store interface {
 
 	GetUtxo(id []byte) (*types.UTXO, error)
 
-	SaveUtxo(utxo *types.TxOutput)
+	SaveUtxos(expiredUtxoIds []types.Hash, utxos *[]types.UTXO) error
 }

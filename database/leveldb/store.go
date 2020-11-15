@@ -2,7 +2,6 @@ package leveldb
 
 import (
 	"encoding/json"
-	"github.com/golang/protobuf/proto"
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/tybc/errors"
 	"github.com/tybc/types"
@@ -56,29 +55,33 @@ func (store *Store) GetTx(id []byte) (*types.Tx, error) {
 }
 
 func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
-	var utxo types.UTXO
 	data := store.db.Get(getUtxoKey(id))
 	if data == nil {
 		return nil, errors.Wrapf(storeErr, "utxo(id=%x) does not exists", id)
 	}
 
-	if err := proto.Unmarshal(data, &utxo); err != nil {
+	utxo := &types.UTXO{}
+	if err := json.Unmarshal(data, &utxo); err != nil {
 		return nil, err
 	}
 
-	return &utxo, nil
+	return utxo, nil
 }
 
-func (store *Store) SaveUtxo(utxo *types.TxOutput) {
-	//b, err := proto.Marshal(utxo)
-	//fmt.Printf("data %x \n", b)
-	//
-	//if err != nil {
-	//	return
-	//}
-	//
-	//k := getUtxoKey(&utxo.Id)
-	//fmt.Printf("Key %x \n", k)
-	//
-	//store.db.Set(getUtxoKey(&utxo.Id), b)
+func (store *Store) SaveUtxos(expiredUtxoIds []types.Hash, utxos *[]types.UTXO) error {
+
+	batch := store.db.NewBatch()
+	for _, e := range expiredUtxoIds {
+		batch.Delete(e.Bytes())
+	}
+
+	for _, utxo := range *utxos {
+		b, err := json.Marshal(utxo)
+		if err != nil {
+			return errors.Wrapf(err, "SaveUtxos json marshal error")
+		}
+		batch.Set(getUtxoKey(utxo.OutputId.Bytes()), b)
+	}
+	batch.Write()
+	return nil
 }
