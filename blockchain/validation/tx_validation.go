@@ -45,7 +45,7 @@ func validateInput(inputs *[]types.TxInput, txId types.Hash) error {
 			return errors.Wrapf(validationInputErr, "repeat utxos,source id=%x", input.SoureId)
 		}
 
-		// utxo check in transaction.Completion
+		// notes: utxo check in transaction.Completion
 
 		// verify sign
 		signFunc := func(pk []byte, sig []byte) bool {

@@ -24,16 +24,26 @@ func NewStore(db dbm.DB) *Store {
 	}
 }
 
-func getTxKey(id *[]byte) []byte {
-	return []byte(txPrefix + string(*id))
+func getTxKey(id []byte) []byte {
+	return []byte(txPrefix + string(id))
 }
 
-func getUtxoKey(id *[]byte) []byte {
-	return []byte(utxoPrefix + string(*id))
+func getUtxoKey(id []byte) []byte {
+	return []byte(utxoPrefix + string(id))
+}
+
+func (store *Store) AddTx(tx *types.Tx) error {
+	b, err := json.Marshal(tx)
+	if err != nil {
+		return errors.Wrapf(err, "AddTx json marshal error")
+	}
+
+	store.db.Set(getTxKey(tx.ID.Bytes()), b)
+	return nil
 }
 
 func (store *Store) GetTx(id []byte) (*types.Tx, error) {
-	b := store.db.Get(getTxKey(&id))
+	b := store.db.Get(getTxKey(id))
 	if b == nil {
 		return nil, nil
 	}
@@ -47,7 +57,7 @@ func (store *Store) GetTx(id []byte) (*types.Tx, error) {
 
 func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	var utxo types.UTXO
-	data := store.db.Get(getUtxoKey(&id))
+	data := store.db.Get(getUtxoKey(id))
 	if data == nil {
 		return nil, errors.Wrapf(storeErr, "utxo(id=%x) does not exists", id)
 	}

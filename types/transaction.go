@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/tybc/blockchain"
 	"github.com/tybc/common/math"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
@@ -35,11 +34,11 @@ func (tx *Tx) GenerateID() (*Hash, error) {
 	return &h, nil
 }
 
-func (tx *Tx) Completion(store *blockchain.Store) error {
+func (tx *Tx) Completion(getUtxo func(spendOutputId Hash) (*UTXO, error)) error {
 	//set spend data
 	//check input rel utxo
 	for _, input := range tx.TxInput {
-		if utxo, err := blockchain.GetUtxoByOutputId(store, input.SpendOutputId); err != nil {
+		if utxo, err := getUtxo(input.SpendOutputId); err != nil {
 			return err
 		} else {
 			input.SetSpend(utxo)

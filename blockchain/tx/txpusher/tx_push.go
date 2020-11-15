@@ -16,7 +16,10 @@ var (
 func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	log.Logger.Infof("receive a new transaction ID=%x", tx.ID)
 
-	if err := tx.Completion(&chain.Store); err != nil {
+	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
+		return blockchain.GetUtxoByOutputId(&chain.Store, spendOutputId)
+	}
+	if err := tx.Completion(getUtxo); err != nil {
 		return err
 	}
 
@@ -39,7 +42,11 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	if err := validation.ValidateTx(tx); err != nil {
 		return err
 	}
-	//TODO push into tx pool
+
+	//push into tx pool
+	if err = chain.Txpool.AddTx(tx); err != nil {
+		return err
+	}
 
 	return nil
 }

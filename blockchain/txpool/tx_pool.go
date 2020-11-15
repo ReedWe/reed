@@ -20,6 +20,13 @@ func NewTxpool(store blockchain.Store) *Txpool {
 	}
 }
 
+func (tp *Txpool) AddTx(tx *types.Tx) error {
+	tp.mtx.Lock()
+	defer tp.mtx.Unlock()
+
+	return tp.Store.AddTx(tx)
+}
+
 func (tp *Txpool) GetTx(txId *types.Hash) (*types.Tx, error) {
 	tp.mtx.RLock()
 	defer tp.mtx.RUnlock()

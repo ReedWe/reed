@@ -42,7 +42,10 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 		return nil, err
 	}
 
-	if err = tx.Completion(&chain.Store); err != nil {
+	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
+		return blockchain.GetUtxoByOutputId(&chain.Store, spendOutputId)
+	}
+	if err = tx.Completion(getUtxo); err != nil {
 		return nil, err
 	}
 
