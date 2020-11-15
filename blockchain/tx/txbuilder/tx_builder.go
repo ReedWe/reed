@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"github.com/tybc/blockchain"
+	"github.com/tybc/blockchain/tx/txpusher"
 	"github.com/tybc/common/math"
 	"github.com/tybc/errors"
 	"github.com/tybc/types"
@@ -37,31 +38,12 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 		return nil, err
 	}
 
-	if err = completeTx(tx, wt.Pub); err != nil {
+	if err = inspectionTx(tx, wt.Pub); err != nil {
 		return nil, err
 	}
 
-	//set spend data
-	//check input rel utxo
-	for _, input := range tx.TxInput {
-		if utxo, err := blockchain.GetUtxoByOutputId(&chain.Store, input.SpendOutputId); err != nil {
-			return nil, err
-		} else {
-			input.SetSpend(utxo)
-		}
-	}
-
-	//input ID
-	for _, input := range tx.TxInput {
-		//ID
-		input.ID = input.GenerateID()
-	}
-
-	//output ID
-	//locking script
-	for _, output := range tx.TxOutput {
-		output.ScriptPk = output.GenerateLockingScript()
-		output.ID = output.GenerateID()
+	if err = tx.Completion(&chain.Store); err != nil {
+		return nil, err
 	}
 
 	//tx ID
@@ -80,7 +62,9 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 		input.ScriptSig = *scriptSig
 	}
 
-	//TODO check if exist on txpool
+	if err = txpusher.MaybePush(chain, tx); err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -120,7 +104,7 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 	return tx, nil
 }
 
-func completeTx(tx *types.Tx, pub ed25519.PublicKey) error {
+func inspectionTx(tx *types.Tx, pub ed25519.PublicKey) error {
 	if err := maybeFillSelfOutput(tx, pub); err != nil {
 		return err
 	}

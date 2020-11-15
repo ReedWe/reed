@@ -1,12 +1,16 @@
 package types
 
 import (
+	"github.com/tybc/blockchain"
 	"github.com/tybc/common/math"
 	"github.com/tybc/crypto"
 	"github.com/tybc/errors"
 )
 
-//id = Hash(input...,output...)
+var (
+	txOutputCheckErr = errors.New("transaction outpu check error")
+)
+
 type Tx struct {
 	ID Hash `json:"id"`
 
@@ -29,6 +33,38 @@ func (tx *Tx) GenerateID() (*Hash, error) {
 
 	h := BytesToHash(crypto.Sha256(ids...))
 	return &h, nil
+}
+
+func (tx *Tx) Completion(store *blockchain.Store) error {
+	//set spend data
+	//check input rel utxo
+	for _, input := range tx.TxInput {
+		if utxo, err := blockchain.GetUtxoByOutputId(store, input.SpendOutputId); err != nil {
+			return err
+		} else {
+			input.SetSpend(utxo)
+		}
+	}
+
+	//input ID
+	for _, input := range tx.TxInput {
+		//ID
+		input.ID = input.GenerateID()
+	}
+
+	//output ID
+	//locking script
+	for _, output := range tx.TxOutput {
+		if output.Amount == 0 {
+			return errors.Wrapf(txOutputCheckErr, "invalid output amount:%d", output.Amount)
+		}
+		if len(output.Address) != 32 {
+			return errors.Wrapf(txOutputCheckErr, "invalid output address. len(%d).expect 36", len(output.Address))
+		}
+		output.ScriptPk = output.GenerateLockingScript()
+		output.ID = output.GenerateID()
+	}
+	return nil
 }
 
 func (tx *Tx) IsAssetAmtEqual() (sumInput uint64, sumOutput uint64, err error) {

@@ -1,5 +1,7 @@
 package types
 
+import "bytes"
+
 const (
 	HashLength = 32
 )
@@ -24,3 +26,7 @@ func (h *Hash) SetBytes(b []byte) {
 
 // Bytes gets the byte representation of the underlying hash.
 func (h Hash) Bytes() []byte { return h[:] }
+
+func (h Hash) HashEqual(b Hash) bool {
+	return bytes.Equal(h.Bytes(), b.Bytes())
+}

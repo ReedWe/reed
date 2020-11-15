@@ -10,50 +10,49 @@ import (
 )
 
 var (
-	inputErr = errors.New("tx input")
+	inputErr = errors.New("transaction input")
 )
 
 type TxInput struct {
-	ID Hash `json:"id"`
+	ID        Hash `json:"-"`
 	Spend
 	ScriptSig []byte `json:"scriptSig"`
 }
 
-func (txInput *TxInput) SetSpend(utxo *UTXO) {
-	txInput.SoureId = BytesToHash(utxo.SoureId)
-	txInput.SourcePos = utxo.SourcePos
-	txInput.Amount = utxo.Amount
-	txInput.ScriptPk = utxo.ScriptPk
+func (ti *TxInput) SetSpend(utxo *UTXO) {
+	ti.SoureId = BytesToHash(utxo.SoureId)
+	ti.SourcePos = utxo.SourcePos
+	ti.Amount = utxo.Amount
+	ti.ScriptPk = utxo.ScriptPk
 }
 
-func (txInput *TxInput) GenerateID() Hash {
-	//TODO maybe need: len(txInput.ScriptPk) >0
+func (ti *TxInput) GenerateID() Hash {
 	split := []byte(":")
 	var sourcePosByte = make([]byte, 4)
-	binary.LittleEndian.PutUint32(sourcePosByte, txInput.SourcePos)
+	binary.LittleEndian.PutUint32(sourcePosByte, ti.SourcePos)
 
 	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, txInput.Amount)
+	binary.LittleEndian.PutUint64(amountByte, ti.Amount)
 
 	b := bytes.Join([][]byte{
-		txInput.SpendOutputId.Bytes(),
+		ti.SpendOutputId.Bytes(),
 		split,
-		txInput.SoureId.Bytes(),
+		ti.SoureId.Bytes(),
 		split,
 		sourcePosByte,
 		split,
 		amountByte,
 		split,
-		txInput.ScriptPk,
+		ti.ScriptPk,
 	}, []byte{})
 
 	h := BytesToHash(crypto.Sha256(b))
 	return h
 }
 
-func (txInput *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
+func (ti *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
 	message := bytes.Join([][]byte{
-		txInput.ID.Bytes(),
+		ti.ID.Bytes(),
 		(*txId).Bytes(),
 	}, []byte{})
 
@@ -67,4 +66,12 @@ func (txInput *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byt
 		wt.Pub,
 	}, []byte{})
 	return &scriptSig, nil
+}
+
+func (ti *TxInput) ValidateID() error {
+	expect := ti.GenerateID()
+	if !ti.ID.HashEqual(expect) {
+		return errors.Wrapf(inputErr, "ID not equal. expect %x. actual %x.", expect, ti.ID)
+	}
+	return nil
 }
