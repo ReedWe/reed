@@ -19,40 +19,40 @@ type TxInput struct {
 	ScriptSig []byte `json:"scriptSig"`
 }
 
-func (ti *TxInput) SetSpend(utxo *UTXO) {
-	ti.SoureId = utxo.SoureId
-	ti.SourcePos = utxo.SourcePos
-	ti.Amount = utxo.Amount
-	ti.ScriptPk = utxo.ScriptPk
+func (i *TxInput) SetSpend(utxo *UTXO) {
+	i.SoureId = utxo.SoureId
+	i.SourcePos = utxo.SourcePos
+	i.Amount = utxo.Amount
+	i.ScriptPk = utxo.ScriptPk
 }
 
-func (ti *TxInput) GenerateID() Hash {
+func (i *TxInput) GenerateID() Hash {
 	split := []byte(":")
 	var sourcePosByte = make([]byte, 4)
-	binary.LittleEndian.PutUint32(sourcePosByte, ti.SourcePos)
+	binary.LittleEndian.PutUint32(sourcePosByte, i.SourcePos)
 
 	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, ti.Amount)
+	binary.LittleEndian.PutUint64(amountByte, i.Amount)
 
 	b := bytes.Join([][]byte{
-		ti.SpendOutputId.Bytes(),
+		i.SpendOutputId.Bytes(),
 		split,
-		ti.SoureId.Bytes(),
+		i.SoureId.Bytes(),
 		split,
 		sourcePosByte,
 		split,
 		amountByte,
 		split,
-		ti.ScriptPk,
+		i.ScriptPk,
 	}, []byte{})
 
 	h := BytesToHash(crypto.Sha256(b))
 	return h
 }
 
-func (ti *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
+func (i *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, error) {
 	message := bytes.Join([][]byte{
-		ti.ID.Bytes(),
+		i.ID.Bytes(),
 		(*txId).Bytes(),
 	}, []byte{})
 
@@ -68,10 +68,10 @@ func (ti *TxInput) GenerateScriptSig(wt *wallet.Wallet, txId *Hash) (*[]byte, er
 	return &scriptSig, nil
 }
 
-func (ti *TxInput) ValidateID() error {
-	expect := ti.GenerateID()
-	if !ti.ID.HashEqual(expect) {
-		return errors.Wrapf(inputErr, "ID not equal. expect %x. actual %x.", expect, ti.ID)
+func (i *TxInput) ValidateID() error {
+	expect := i.GenerateID()
+	if !i.ID.HashEqual(expect) {
+		return errors.Wrapf(inputErr, "ID not equal. expect %x. actual %x.", expect, i.ID)
 	}
 	return nil
 }

@@ -20,38 +20,38 @@ var (
 	outpuErr = errors.New("transaction output error")
 )
 
-func (tot *TxOutput) GenerateID() Hash {
+func (o *TxOutput) GenerateID() Hash {
 	split := []byte(":")
 
 	isCoinBaseByte := []byte{1}
-	if !tot.IsCoinBase {
+	if !o.IsCoinBase {
 		isCoinBaseByte = []byte{0}
 	}
 
 	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, tot.Amount)
+	binary.LittleEndian.PutUint64(amountByte, o.Amount)
 
 	datas := bytes.Join([][]byte{
 		isCoinBaseByte,
 		split,
-		tot.Address,
+		o.Address,
 		split,
 		amountByte,
 		split,
-		tot.ScriptPk,
+		o.ScriptPk,
 	}, []byte{})
 
 	return BytesToHash(crypto.Sha256(datas))
 }
 
-func (tot *TxOutput) GenerateLockingScript() []byte {
-	return vmcommon.BuildP2PKHScript(crypto.Sha256(tot.Address))
+func (o *TxOutput) GenerateLockingScript() []byte {
+	return vmcommon.BuildP2PKHScript(crypto.Sha256(o.Address))
 }
 
-func (tot *TxOutput) ValidateID() error {
-	expect := tot.GenerateID()
-	if !tot.ID.HashEqual(expect) {
-		return errors.Wrapf(outpuErr, "ID not equal. expect %x. actual %x.", expect, tot.ID)
+func (o *TxOutput) ValidateID() error {
+	expect := o.GenerateID()
+	if !o.ID.HashEqual(expect) {
+		return errors.Wrapf(outpuErr, "ID not equal. expect %x. actual %x.", expect, o.ID)
 	}
 	return nil
 }
