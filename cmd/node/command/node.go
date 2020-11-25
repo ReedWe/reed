@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"github.com/tendermint/tmlibs/common"
 	"github.com/tybc/api"
 )
@@ -22,14 +21,12 @@ func NewNode() *Node {
 }
 
 func (n *Node) OnStart() error {
-	fmt.Println("Node Onstart...")
-
 	n.api.StartApiServer()
 	return nil
 }
 
 func (n *Node) OnStop() {
-	fmt.Println("Node Onstop")
+	//do nothing
 }
 
 func (n *Node) RunFover() {
