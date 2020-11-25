@@ -23,7 +23,7 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
-	//tx ID
+	//generate txID and validate
 	txId, err := tx.GenerateID()
 	if !txId.HashEqual(tx.ID) {
 		return errors.Wrapf(recvTxErr, "txId errors. local=%x remote=%x", txId, tx.ID)
@@ -33,7 +33,6 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
-
 	if existTx != nil {
 		log.Logger.Infof("transaction exists already (id=%x)", tx.ID)
 		return nil
@@ -48,6 +47,9 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
+	//TODO broadcast this transaction
+
+	// TODO NOT HERE
 	//output utxo and save changed
 	utxos := blockchain.OutputsToUtxos(&tx.ID, &tx.TxOutput)
 	if err = blockchain.UtxoChange(&chain.Store, &tx.TxInput, utxos); err != nil {

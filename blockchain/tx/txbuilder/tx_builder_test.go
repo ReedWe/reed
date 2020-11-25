@@ -35,8 +35,8 @@ func mockUTXO() *types.UTXO {
 	var3, _ := hex.DecodeString("d7eef5283d692d22b1951864a6329f4600b4b420c545ad857e704bacd7c258e2")
 
 	var utxo = &types.UTXO{
-		OutputId:  var1,
-		SoureId:   var2,
+		OutputId:  types.BytesToHash(var1),
+		SoureId:   types.BytesToHash(var2),
 		SourcePos: 0,
 		Amount:    19,
 		Address:   var3,

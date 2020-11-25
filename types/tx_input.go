@@ -20,7 +20,7 @@ type TxInput struct {
 }
 
 func (ti *TxInput) SetSpend(utxo *UTXO) {
-	ti.SoureId = BytesToHash(utxo.SoureId)
+	ti.SoureId = utxo.SoureId
 	ti.SourcePos = utxo.SourcePos
 	ti.Amount = utxo.Amount
 	ti.ScriptPk = utxo.ScriptPk
