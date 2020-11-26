@@ -4,10 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/tybc/crypto"
-	"github.com/tybc/types"
-	"github.com/tybc/vm/vmcommon"
-	"github.com/tybc/wallet"
+	"github.com/reed/crypto"
+	"github.com/reed/types"
+	"github.com/reed/vm/vmcommon"
+	"github.com/reed/wallet"
 	"testing"
 )
 

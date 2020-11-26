@@ -2,11 +2,11 @@ package validation
 
 import (
 	"bytes"
-	"github.com/tybc/crypto"
-	"github.com/tybc/errors"
-	"github.com/tybc/log"
-	"github.com/tybc/types"
-	"github.com/tybc/vm"
+	"github.com/reed/crypto"
+	"github.com/reed/errors"
+	"github.com/reed/log"
+	"github.com/reed/types"
+	"github.com/reed/vm"
 )
 
 var (

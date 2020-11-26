@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"github.com/tybc/blockchain/store"
-	"github.com/tybc/errors"
-	"github.com/tybc/types"
+	"github.com/reed/blockchain/store"
+	"github.com/reed/errors"
+	"github.com/reed/types"
 )
 
 func GetUtxoByOutputId(store *store.Store, outputId types.Hash) (*types.UTXO, error) {

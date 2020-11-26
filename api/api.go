@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tybc/blockchain/tx/txbuilder"
-	"github.com/tybc/blockchain/txpool"
-	"github.com/tybc/database/leveldb"
-	"github.com/tybc/errors"
-	"github.com/tybc/log"
-	"github.com/tybc/types"
+	"github.com/reed/blockchain/tx/txbuilder"
+	"github.com/reed/blockchain/txpool"
+	"github.com/reed/database/leveldb"
+	"github.com/reed/errors"
+	"github.com/reed/log"
+	"github.com/reed/types"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -32,7 +32,7 @@ type Res struct {
 
 func NewApi() *API {
 
-	leveldbStore := leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/tybc/database/file/"))
+	leveldbStore := leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/reed/database/file/"))
 
 	api := &API{}
 

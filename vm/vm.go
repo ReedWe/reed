@@ -2,9 +2,9 @@ package vm
 
 import (
 	"bytes"
-	"github.com/tybc/crypto"
-	"github.com/tybc/errors"
-	"github.com/tybc/vm/vmcommon"
+	"github.com/reed/crypto"
+	"github.com/reed/errors"
+	"github.com/reed/vm/vmcommon"
 )
 
 var (

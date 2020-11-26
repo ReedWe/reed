@@ -1,4 +1,4 @@
-module github.com/tybc
+module github.com/reed
 
 go 1.14
 

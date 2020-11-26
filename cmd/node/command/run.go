@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/tybc/log"
+	"github.com/reed/log"
 )
 
 var (

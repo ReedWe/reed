@@ -2,7 +2,7 @@ package command
 
 import (
 	"github.com/tendermint/tmlibs/common"
-	"github.com/tybc/api"
+	"github.com/reed/api"
 )
 
 type Node struct {

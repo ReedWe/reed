@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/tybc/common/math"
-	"github.com/tybc/crypto"
-	"github.com/tybc/errors"
+	"github.com/reed/common/math"
+	"github.com/reed/crypto"
+	"github.com/reed/errors"
 )
 
 var (

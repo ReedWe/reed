@@ -1,8 +1,8 @@
 package txpool
 
 import (
-	"github.com/tybc/blockchain/store"
-	"github.com/tybc/types"
+	"github.com/reed/blockchain/store"
+	"github.com/reed/types"
 	"sync"
 )
 

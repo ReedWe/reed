@@ -3,12 +3,12 @@ package txbuilder
 import (
 	"crypto/ed25519"
 	"encoding/hex"
-	"github.com/tybc/blockchain"
-	"github.com/tybc/blockchain/tx/txpusher"
-	"github.com/tybc/common/math"
-	"github.com/tybc/errors"
-	"github.com/tybc/types"
-	"github.com/tybc/wallet"
+	"github.com/reed/blockchain"
+	"github.com/reed/blockchain/tx/txpusher"
+	"github.com/reed/common/math"
+	"github.com/reed/errors"
+	"github.com/reed/types"
+	"github.com/reed/wallet"
 )
 
 var (

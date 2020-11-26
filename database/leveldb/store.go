@@ -3,8 +3,8 @@ package leveldb
 import (
 	"encoding/json"
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tybc/errors"
-	"github.com/tybc/types"
+	"github.com/reed/errors"
+	"github.com/reed/types"
 )
 
 var (

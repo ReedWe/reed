@@ -1,6 +1,6 @@
 package store
 
-import "github.com/tybc/types"
+import "github.com/reed/types"
 
 type Store interface {
 	AddTx(tx *types.Tx) error

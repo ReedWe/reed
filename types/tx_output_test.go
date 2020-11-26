@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/tybc/crypto"
-	"github.com/tybc/vm/vmcommon"
+	"github.com/reed/crypto"
+	"github.com/reed/vm/vmcommon"
 	"testing"
 )
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/tybc/cmd/cli/command"
-	"github.com/tybc/log"
-	"github.com/tybc/types"
+	"github.com/reed/cmd/cli/command"
+	"github.com/reed/log"
+	"github.com/reed/types"
 )
 
 func main() {

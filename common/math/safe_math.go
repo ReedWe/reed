@@ -1,6 +1,6 @@
 package math
 
-import "github.com/tybc/errors"
+import "github.com/reed/errors"
 
 var (
 	mathOverflowErr  = errors.New("math overflow")
