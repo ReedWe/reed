@@ -9,9 +9,9 @@ import (
 	"math/big"
 )
 
-func CheckProofOfWork(nonce big.Int, hash types.Hash) bool {
+func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 	var hashIntVal big.Int
 
 	hashIntVal.SetBytes(hash.Bytes())
-	return nonce.Cmp(&hashIntVal) == -1
+	return target.Cmp(&hashIntVal) == -1
 }

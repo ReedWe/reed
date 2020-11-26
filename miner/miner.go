@@ -58,9 +58,10 @@ func (m *Miner) work() {
 			//just for no block,do nothing
 		}
 
-		if pow.CheckProofOfWork(cblock.Nonce, cblock.GetHash()) {
+		if pow.CheckProofOfWork(cblock.Bits, cblock.GetHash()) {
 			//挖矿成功广播区块
 		} else {
+			//判断 nonce是否已达到最大值
 			cblock.Nonce.Add(&cblock.Nonce, big.NewInt(1))
 		}
 	}
