@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/tybc/cmd/node/command"
-	"github.com/tybc/log"
+	"github.com/reed/cmd/node/command"
+	"github.com/reed/log"
 )
 
 func main() {

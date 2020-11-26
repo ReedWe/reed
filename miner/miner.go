@@ -1,4 +1,4 @@
-// Copyright 2020 The tybc Developers
+// Copyright 2020 The Reed Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,9 +6,9 @@ package miner
 
 import (
 	"fmt"
-	"github.com/tybc/consensus/pow"
-	"github.com/tybc/errors"
-	"github.com/tybc/types"
+	"github.com/reed/consensus/pow"
+	"github.com/reed/errors"
+	"github.com/reed/types"
 	"math/big"
 	"sync"
 )

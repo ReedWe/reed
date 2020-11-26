@@ -1,11 +1,11 @@
 package txpusher
 
 import (
-	"github.com/tybc/blockchain"
-	"github.com/tybc/blockchain/validation"
-	"github.com/tybc/errors"
-	"github.com/tybc/log"
-	"github.com/tybc/types"
+	"github.com/reed/blockchain"
+	"github.com/reed/blockchain/validation"
+	"github.com/reed/errors"
+	"github.com/reed/log"
+	"github.com/reed/types"
 )
 
 var (

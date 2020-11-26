@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/tybc/blockchain/store"
-	"github.com/tybc/blockchain/txpool"
+	"github.com/reed/blockchain/store"
+	"github.com/reed/blockchain/txpool"
 )
 
 type Chain struct {

@@ -3,9 +3,9 @@ package vm
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/tybc/crypto"
-	"github.com/tybc/types"
-	"github.com/tybc/wallet"
+	"github.com/reed/crypto"
+	"github.com/reed/types"
+	"github.com/reed/wallet"
 	"testing"
 )
 

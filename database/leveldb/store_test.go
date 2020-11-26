@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tybc/types"
+	"github.com/reed/types"
 	"os"
 	"testing"
 )
@@ -61,7 +61,7 @@ func TestSaveTx(t *testing.T) {
 	if err != nil {
 		t.Error("marshal error")
 	}
-	store := dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/tybc/database/file/")
+	store := dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/reed/database/file/")
 
 	store.Set([]byte("tx123"), marshal)
 

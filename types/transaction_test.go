@@ -3,7 +3,7 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/tybc/crypto"
+	"github.com/reed/crypto"
 	"testing"
 )
 

@@ -3,10 +3,10 @@ package types
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/tybc/crypto"
-	"github.com/tybc/errors"
-	"github.com/tybc/vm/vmcommon"
-	"github.com/tybc/wallet"
+	"github.com/reed/crypto"
+	"github.com/reed/errors"
+	"github.com/reed/vm/vmcommon"
+	"github.com/reed/wallet"
 )
 
 var (

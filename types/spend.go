@@ -1,7 +1,7 @@
 package types
 
 import (
-	_ "github.com/tybc/crypto"
+	_ "github.com/reed/crypto"
 )
 
 // id = Hash(field1,field2,...)

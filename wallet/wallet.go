@@ -2,7 +2,7 @@ package wallet
 
 import (
 	"encoding/hex"
-	"github.com/tybc/errors"
+	"github.com/reed/errors"
 	"golang.org/x/crypto/ed25519"
 )
 
