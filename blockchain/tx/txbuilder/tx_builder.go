@@ -16,7 +16,7 @@ var (
 	txAssetAmtErr = errors.New("transaction asset amount error")
 )
 
-func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
+func SubmitTx(chain *types.Chain, reqTx *types.SubmitTxRequest) (*types.SumbitTxResponse, error) {
 
 	if len(reqTx.TxInputs) == 0 {
 		return nil, errors.WithDetail(submitTxErr, "no input data")

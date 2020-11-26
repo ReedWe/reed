@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	dbm "github.com/tendermint/tmlibs/db"
-	bc "github.com/tybc/blockchain"
 	"github.com/tybc/blockchain/tx/txbuilder"
 	"github.com/tybc/blockchain/txpool"
 	"github.com/tybc/database/leveldb"
@@ -22,7 +21,7 @@ var (
 )
 
 type API struct {
-	Chain  bc.Chain
+	Chain  types.Chain
 	Server *http.Server
 }
 
@@ -50,7 +49,7 @@ func NewApi() *API {
 	}
 
 	tp := txpool.NewTxpool(leveldbStore)
-	api.Chain = bc.Chain{Store: leveldbStore, Txpool: tp}
+	api.Chain = types.Chain{Store: leveldbStore, Txpool: tp}
 	api.Server = httpServer
 
 	return api

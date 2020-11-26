@@ -13,7 +13,7 @@ var (
 )
 
 // receive local transaction and remote transaction
-func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
+func MaybePush(chain *types.Chain, tx *types.Tx) error {
 	log.Logger.Infof("receive a new transaction ID=%x", tx.ID)
 
 	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
