@@ -17,6 +17,6 @@ tybc是一个用于学习交流的开源区块链项目，区块链项目虽说�
 如果你也有兴趣一起参与到这个项目，一起交流学习，欢迎fork。贡献并不一定是参与编码，也可以是翻译文档、探讨相关技术等。
 
 ## License
-tybc是一个使用MIT协议的开源项目。
+tybc是一个遵守MIT协议的开源项目，如果想了解更多信息请浏览COPYING文件。
 
 tybc is released under the terms of the MIT license. See COPYING for more information or see https://opensource.org/licenses/MIT.
