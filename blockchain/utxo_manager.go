@@ -1,11 +1,12 @@
 package blockchain
 
 import (
+	"github.com/tybc/blockchain/store"
 	"github.com/tybc/errors"
 	"github.com/tybc/types"
 )
 
-func GetUtxoByOutputId(store *Store, outputId types.Hash) (*types.UTXO, error) {
+func GetUtxoByOutputId(store *store.Store, outputId types.Hash) (*types.UTXO, error) {
 	id := outputId.Bytes()
 	utxo, err := (*store).GetUtxo(id)
 	if utxo == nil || err != nil {
@@ -29,7 +30,7 @@ func OutputsToUtxos(txId *types.Hash, outputs *[]types.TxOutput) *[]types.UTXO {
 	return &utxos
 }
 
-func UtxoChange(store *Store, inputs *[]types.TxInput, utxos *[]types.UTXO) error {
+func UtxoChange(store *store.Store, inputs *[]types.TxInput, utxos *[]types.UTXO) error {
 	var expiredUtxoIds []types.Hash
 	for _, input := range *inputs {
 		expiredUtxoIds = append(expiredUtxoIds, input.ID)

@@ -1,7 +1,7 @@
 package txpool
 
 import (
-	"github.com/tybc/blockchain"
+	"github.com/tybc/blockchain/store"
 	"github.com/tybc/types"
 	"sync"
 )
@@ -9,11 +9,11 @@ import (
 type Txpool struct {
 	Txs       map[types.Hash]*types.Tx
 	OutputIds map[types.Hash]*types.TxOutput
-	Store     blockchain.Store
+	Store     store.Store
 	mtx       sync.RWMutex
 }
 
-func NewTxpool(store blockchain.Store) *Txpool {
+func NewTxpool(store store.Store) *Txpool {
 	return &Txpool{
 		Txs:   make(map[types.Hash]*types.Tx),
 		Store: store,

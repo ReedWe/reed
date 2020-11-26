@@ -1,4 +1,4 @@
-package blockchain
+package store
 
 import "github.com/tybc/types"
 
