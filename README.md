@@ -4,7 +4,7 @@ tybc是一个用于学习交流的开源区块链项目，区块链项目虽说�
 也可以说tybc是一个“分布式账本”项目，它的功能几乎和比特币一样，实际上在开发的过程中很多地方都会参考比特币。但是与这样一个小项目来说比特币还是过于臃肿，所以会砍掉一些没必要的功能，比如验签的隔离见证（Segregated Witness），它虽然是对区块进行了优化，但对于目前的typc来说先跑起来更重要（至少第一个版本是这样），所以选择直接将ScriptSig/ScriptPk直接放在区块的方式；还有多签的机制也砍掉，只剩下一个P2PKH。目标是使用最小限度的功能，搭建一个“分布式账本”。
 
 ## Framework
-![type framework](doc/framework.png)
+![type framework](doc/framework.jpg)
 
 ## Running
 待续
