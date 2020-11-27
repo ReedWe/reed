@@ -5,16 +5,21 @@
 package miner
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/types"
-	"math/big"
+	"strconv"
 	"sync"
 )
 
 var (
 	startErr = errors.New("miner start error")
+)
+
+const (
+	maxTries = ^uint64(0)
 )
 
 type Miner struct {
@@ -45,15 +50,18 @@ func (m *Miner) Start() error {
 }
 
 func (m *Miner) work() {
-	var cblock types.BlockHeader
+	var cblock types.Block
 
 	//获取最新的区块信息，赋值给cblock
+
+	tries := maxTries
+	extraNonce := uint64(0)
 
 	for {
 		select {
 		case b := <-m.submitCh:
 			fmt.Println(b)
-			cblock = b.BlockHeader
+
 		default:
 			//just for no block,do nothing
 		}
@@ -61,9 +69,22 @@ func (m *Miner) work() {
 		if pow.CheckProofOfWork(cblock.Bits, cblock.GetHash()) {
 			//挖矿成功广播区块
 		} else {
-			//判断 nonce是否已达到最大值
-			cblock.Nonce.Add(&cblock.Nonce, big.NewInt(1))
+			if tries == 0 {
+				//reset
+				tries = maxTries
+				cblock.Nonce = 0
+
+				extraNonce++
+				m.incrementExtraNonce(extraNonce, &cblock)
+			} else {
+				cblock.Nonce++
+				tries--
+			}
 		}
 	}
+}
 
+func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
+	txs := *cblock.Transactions
+	txs[0].TxInput[0].ScriptSig = bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 }

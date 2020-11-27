@@ -3,7 +3,10 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"github.com/reed/crypto"
+	"strconv"
 	"testing"
 )
 
@@ -12,8 +15,10 @@ func TestTx_GenerateID(t *testing.T) {
 	id2, _ := hex.DecodeString("1a946d5a05761732ae162a886a767fdefa3ce3ee66f9cc0352481e0ae751db9c")
 	id3, _ := hex.DecodeString("f3e023bebab7e9b6f83a94ac4064f0f4e2ea5f67af77f6857a6c0fe9121d359f")
 	inp1 := &TxInput{
-		ID: BytesToHash(id1),
+		ID:        BytesToHash(id1),
+		ScriptSig: []byte("miner"),
 	}
+
 	inp2 := &TxInput{
 		ID: BytesToHash(id2),
 	}
@@ -65,6 +70,25 @@ func TestTx_GenerateID(t *testing.T) {
 		t.Error("GenerateID error")
 	}
 
+	var txs []Tx
+	txs = append(txs, *tx)
+
+	block := &Block{
+		Transactions: &txs,
+	}
+	incrementExtraNonce(19, block)
+
+	marshal, _ := json.Marshal(tx.TxInput[0])
+	fmt.Printf("%s", marshal)
+}
+
+func incrementExtraNonce(extraNonce uint64, cblock *Block) {
+
+	txs := *cblock.Transactions
+
+	msg := bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce,10))}, []byte{})
+
+	txs[0].TxInput[0].ScriptSig = msg
 }
 
 func mockJustIDTxInput() TxInput {
