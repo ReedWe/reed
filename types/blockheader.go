@@ -1,17 +1,23 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/reed/crypto"
 	"math/big"
 )
 
 type BlockHeader struct {
-	Height      uint64
-	PrevBlockId *Hash
-	Timestamp   uint64
-	Nonce       big.Int
-	Bits        big.Int
+	Height         uint64
+	PrevBlockHash  *Hash
+	MerkleRootHash *Hash
+	Timestamp      uint64
+	Nonce          uint64
+	Bits           big.Int
 }
 
 func (bh *BlockHeader) GetHash() Hash {
@@ -23,13 +29,14 @@ func (bh *BlockHeader) GetHash() Hash {
 	binary.LittleEndian.PutUint64(tsB, bh.Height)
 	binary.LittleEndian.PutUint64(nonceB, bh.Height)
 
-	hash := bytes.Join([][]byte{
+	msg := bytes.Join([][]byte{
 		heightB,
-		bh.PrevBlockId.Bytes(),
+		bh.PrevBlockHash.Bytes(),
+		bh.MerkleRootHash.Bytes(),
 		tsB,
 		nonceB,
 		bh.Bits.Bytes(),
 	}, []byte{})
 
-	return BytesToHash(hash)
+	return BytesToHash(crypto.Sha256(msg))
 }
