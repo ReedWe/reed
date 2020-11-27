@@ -5,11 +5,13 @@
 package miner
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
+	"github.com/reed/log"
 	"github.com/reed/types"
-	"math/big"
+	"strconv"
 	"sync"
 )
 
@@ -17,17 +19,22 @@ var (
 	startErr = errors.New("miner start error")
 )
 
+const (
+	maxTries = ^uint64(0)
+)
+
 type Miner struct {
 	sync.Mutex
-	working  bool
-	submitCh <-chan *types.Block
-	winCh    chan<- *types.Block
+	working          bool
+	blockReceptionCh <-chan *types.Block
+	blockSendCh      chan<- *types.Block
+	stopWorkCh       <-chan struct{}
 }
 
 func NewMiner(submitCh <-chan *types.Block) *Miner {
 	return &Miner{
-		working:  false,
-		submitCh: submitCh,
+		working:          false,
+		blockReceptionCh: submitCh,
 	}
 }
 
@@ -45,25 +52,42 @@ func (m *Miner) Start() error {
 }
 
 func (m *Miner) work() {
-	var cblock types.BlockHeader
+	var cblock types.Block
 
-	//获取最新的区块信息，赋值给cblock
+	extraNonce := uint64(0)
 
+loop:
 	for {
 		select {
-		case b := <-m.submitCh:
+		case b := <-m.blockReceptionCh:
+			// receive a new block from remote node
+			// cblock = fetch laest block
 			fmt.Println(b)
-			cblock = b.BlockHeader
+		case <-m.stopWorkCh:
+			log.Logger.Info("receive a stop single,stop miner...")
+			break loop
 		default:
 			//just for no block,do nothing
 		}
 
 		if pow.CheckProofOfWork(cblock.Bits, cblock.GetHash()) {
-			//挖矿成功广播区块
+			//broadcast new block
 		} else {
-			//判断 nonce是否已达到最大值
-			cblock.Nonce.Add(&cblock.Nonce, big.NewInt(1))
+			if cblock.Nonce == maxTries {
+				//reset nonce
+				cblock.Nonce = 0
+
+				//change coinbase tx's scriptSig and continue
+				extraNonce++
+				m.incrementExtraNonce(extraNonce, &cblock)
+			} else {
+				cblock.Nonce++
+			}
 		}
 	}
+}
 
+func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
+	txs := *cblock.Transactions
+	txs[0].TxInput[0].ScriptSig = bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 }

@@ -1,4 +1,4 @@
-package types
+package blockchain
 
 import (
 	"github.com/reed/blockchain/store"

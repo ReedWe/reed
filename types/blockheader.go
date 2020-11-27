@@ -12,11 +12,12 @@ import (
 )
 
 type BlockHeader struct {
-	Height      uint64
-	PrevBlockId *Hash
-	Timestamp   uint64
-	Nonce       big.Int
-	Bits        big.Int
+	Height         uint64
+	PrevBlockHash  *Hash
+	MerkleRootHash *Hash
+	Timestamp      uint64
+	Nonce          uint64
+	Bits           big.Int
 }
 
 func (bh *BlockHeader) GetHash() Hash {
@@ -30,7 +31,8 @@ func (bh *BlockHeader) GetHash() Hash {
 
 	msg := bytes.Join([][]byte{
 		heightB,
-		bh.PrevBlockId.Bytes(),
+		bh.PrevBlockHash.Bytes(),
+		bh.MerkleRootHash.Bytes(),
 		tsB,
 		nonceB,
 		bh.Bits.Bytes(),

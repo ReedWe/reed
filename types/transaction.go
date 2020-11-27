@@ -80,6 +80,7 @@ func (tx *Tx) IsAssetAmtEqual() (sumInput uint64, sumOutput uint64, err error) {
 	return
 }
 
+
 //func (tx *Transaction) sign() {
 //
 //	for _, input := range tx.TxInput {

@@ -3,13 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	dbm "github.com/tendermint/tmlibs/db"
+	bc "github.com/reed/blockchain"
 	"github.com/reed/blockchain/tx/txbuilder"
 	"github.com/reed/blockchain/txpool"
 	"github.com/reed/database/leveldb"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
+	dbm "github.com/tendermint/tmlibs/db"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -21,7 +22,7 @@ var (
 )
 
 type API struct {
-	Chain  types.Chain
+	Chain  bc.Chain
 	Server *http.Server
 }
 
@@ -49,7 +50,7 @@ func NewApi() *API {
 	}
 
 	tp := txpool.NewTxpool(leveldbStore)
-	api.Chain = types.Chain{Store: leveldbStore, Txpool: tp}
+	api.Chain = bc.Chain{Store: leveldbStore, Txpool: tp}
 	api.Server = httpServer
 
 	return api
