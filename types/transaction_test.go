@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	block2 "github.com/reed/blockchain/block"
 	"github.com/reed/crypto"
 	"strconv"
 	"testing"
@@ -73,7 +74,7 @@ func TestTx_GenerateID(t *testing.T) {
 	var txs []Tx
 	txs = append(txs, *tx)
 
-	block := &Block{
+	block := &block2.Block{
 		Transactions: &txs,
 	}
 	incrementExtraNonce(19, block)
@@ -82,7 +83,7 @@ func TestTx_GenerateID(t *testing.T) {
 	fmt.Printf("%s", marshal)
 }
 
-func incrementExtraNonce(extraNonce uint64, cblock *Block) {
+func incrementExtraNonce(extraNonce uint64, cblock *block2.Block) {
 
 	txs := *cblock.Transactions
 

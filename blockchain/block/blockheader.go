@@ -2,25 +2,26 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-package types
+package block
 
 import (
 	"bytes"
 	"encoding/binary"
 	"github.com/reed/crypto"
+	"github.com/reed/types"
 	"math/big"
 )
 
-type BlockHeader struct {
+type Header struct {
 	Height         uint64
-	PrevBlockHash  *Hash
-	MerkleRootHash *Hash
+	PrevBlockHash  *types.Hash
+	MerkleRootHash *types.Hash
 	Timestamp      uint64
 	Nonce          uint64
-	Bits           big.Int
+	BigNumber      big.Int
 }
 
-func (bh *BlockHeader) GetHash() Hash {
+func (bh *Header) GetHash() types.Hash {
 	heightB := make([]byte, 8)
 	tsB := make([]byte, 8)
 	nonceB := make([]byte, 8)
@@ -35,8 +36,8 @@ func (bh *BlockHeader) GetHash() Hash {
 		bh.MerkleRootHash.Bytes(),
 		tsB,
 		nonceB,
-		bh.Bits.Bytes(),
+		bh.BigNumber.Bytes(),
 	}, []byte{})
 
-	return BytesToHash(crypto.Sha256(msg))
+	return types.BytesToHash(crypto.Sha256(msg))
 }
