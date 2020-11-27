@@ -7,10 +7,10 @@ package miner
 import (
 	"bytes"
 	"fmt"
+	"github.com/reed/blockchain/block"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
-	"github.com/reed/types"
 	"strconv"
 	"sync"
 )
@@ -26,12 +26,12 @@ const (
 type Miner struct {
 	sync.Mutex
 	working          bool
-	blockReceptionCh <-chan *types.Block
-	blockSendCh      chan<- *types.Block
+	blockReceptionCh <-chan *block.Block
+	blockSendCh      chan<- *block.Block
 	stopWorkCh       <-chan struct{}
 }
 
-func NewMiner(submitCh <-chan *types.Block) *Miner {
+func NewMiner(submitCh <-chan *block.Block) *Miner {
 	return &Miner{
 		working:          false,
 		blockReceptionCh: submitCh,
@@ -52,7 +52,9 @@ func (m *Miner) Start() error {
 }
 
 func (m *Miner) work() {
-	var cblock types.Block
+	var block block.Block
+	//calc difficulty
+	block.BigNumber = pow.GetNextDifficulty(&block)
 
 	extraNonce := uint64(0)
 
@@ -61,7 +63,7 @@ loop:
 		select {
 		case b := <-m.blockReceptionCh:
 			// receive a new block from remote node
-			// cblock = fetch laest block
+			// block = fetch laest block
 			fmt.Println(b)
 		case <-m.stopWorkCh:
 			log.Logger.Info("receive a stop single,stop miner...")
@@ -70,24 +72,24 @@ loop:
 			//just for no block,do nothing
 		}
 
-		if pow.CheckProofOfWork(cblock.Bits, cblock.GetHash()) {
+		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {
 			//broadcast new block
 		} else {
-			if cblock.Nonce == maxTries {
+			if block.Nonce == maxTries {
 				//reset nonce
-				cblock.Nonce = 0
+				block.Nonce = 0
 
 				//change coinbase tx's scriptSig and continue
 				extraNonce++
-				m.incrementExtraNonce(extraNonce, &cblock)
+				m.incrementExtraNonce(extraNonce, &block)
 			} else {
-				cblock.Nonce++
+				block.Nonce++
 			}
 		}
 	}
 }
 
-func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
+func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *block.Block) {
 	txs := *cblock.Transactions
 	txs[0].TxInput[0].ScriptSig = bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 }
