@@ -6,7 +6,7 @@ package block
 
 import (
 	"bytes"
-	"encoding/binary"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"github.com/reed/types"
 	"math/big"
@@ -22,20 +22,12 @@ type Header struct {
 }
 
 func (bh *Header) GetHash() types.Hash {
-	heightB := make([]byte, 8)
-	tsB := make([]byte, 8)
-	nonceB := make([]byte, 8)
-
-	binary.LittleEndian.PutUint64(heightB, bh.Height)
-	binary.LittleEndian.PutUint64(tsB, bh.Height)
-	binary.LittleEndian.PutUint64(nonceB, bh.Height)
-
 	msg := bytes.Join([][]byte{
-		heightB,
+		byteconv.Uint64ToBytes(bh.Height),
 		bh.PrevBlockHash.Bytes(),
 		bh.MerkleRootHash.Bytes(),
-		tsB,
-		nonceB,
+		byteconv.Uint64ToBytes(bh.Timestamp),
+		byteconv.Uint64ToBytes(bh.Nonce),
 		bh.BigNumber.Bytes(),
 	}, []byte{})
 

@@ -1,8 +1,12 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"bytes"
-	"encoding/binary"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"github.com/reed/errors"
 	"github.com/reed/vm/vmcommon"
@@ -14,7 +18,7 @@ var (
 )
 
 type TxInput struct {
-	ID        Hash `json:"-"`
+	ID Hash `json:"-"`
 	Spend
 	ScriptSig []byte `json:"scriptSig"`
 }
@@ -28,20 +32,14 @@ func (i *TxInput) SetSpend(utxo *UTXO) {
 
 func (i *TxInput) GenerateID() Hash {
 	split := []byte(":")
-	var sourcePosByte = make([]byte, 4)
-	binary.LittleEndian.PutUint32(sourcePosByte, i.SourcePos)
-
-	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, i.Amount)
-
 	b := bytes.Join([][]byte{
 		i.SpendOutputId.Bytes(),
 		split,
 		i.SoureId.Bytes(),
 		split,
-		sourcePosByte,
+		byteconv.Uint64ToBytes(i.SourcePos),
 		split,
-		amountByte,
+		byteconv.Uint64ToBytes(i.Amount),
 		split,
 		i.ScriptPk,
 	}, []byte{})
