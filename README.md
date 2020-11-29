@@ -15,8 +15,12 @@ Reed is a "decentrialized ledger" with almost the same functions as Bitcoin. Act
 ## Running
 待续
 
+To do
+
 ## Configuration
 待续
+
+To do
 
 ## Contribution
 如果你也有兴趣一起参与到这个项目，一起交流学习，欢迎fork。贡献并不一定是参与编码，也可以是翻译文档、探讨相关技术，为项目提供其他支持。
