@@ -18,10 +18,10 @@ Reed is a "decentrialized ledger" with almost the same functions as Bitcoin. Act
 ## Configuration
 待续
 
-
 ## Contribution
 如果你也有兴趣一起参与到这个项目，一起交流学习，欢迎fork。贡献并不一定是参与编码，也可以是翻译文档、探讨相关技术，为项目提供其他支持。
-If you are interested in participating in this project, welcome to fork! You may make contributions not necessarily by coding, but also by translating documents, discussing pertinent technologies, and providing other support for the project :)
+
+If you are interested in participating in this project, welcome to fork! You may make contributions not necessarily by coding, but also by translating documents, discussing pertinent technologies, and providing other support for this project :)
 
 ## License
 reed是一个遵守MIT协议的开源项目，如果想了解更多信息请浏览COPYING文件。
