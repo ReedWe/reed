@@ -5,16 +5,13 @@ import (
 	"fmt"
 	bc "github.com/reed/blockchain"
 	"github.com/reed/blockchain/tx/txbuilder"
-	"github.com/reed/blockchain/txpool"
-	"github.com/reed/database/leveldb"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
-	dbm "github.com/tendermint/tmlibs/db"
+	cmn "github.com/tendermint/tmlibs/common"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
 )
 
 var (
@@ -22,7 +19,7 @@ var (
 )
 
 type API struct {
-	Chain  bc.Chain
+	Chain  *bc.Chain
 	Server *http.Server
 }
 
@@ -31,16 +28,14 @@ type Res struct {
 	Data    interface{} `json:"data"`
 }
 
-func NewApi() *API {
-
-	leveldbStore := leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/reed/database/file/"))
+func NewApi(c *bc.Chain) *API {
 
 	api := &API{}
 
 	//init api server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Fprint(writer, "Welcome to Tiny chain!")
+		fmt.Fprint(writer, "Welcome to Reed chain!")
 	})
 	mux.HandleFunc("/sumbit-transaction", api.SubmitTxHandler)
 
@@ -49,8 +44,7 @@ func NewApi() *API {
 		Handler: mux,
 	}
 
-	tp := txpool.NewTxpool(leveldbStore)
-	api.Chain = bc.Chain{Store: leveldbStore, Txpool: tp}
+	api.Chain = c
 	api.Server = httpServer
 
 	return api
@@ -59,7 +53,7 @@ func NewApi() *API {
 func (a *API) StartApiServer() {
 	listen, err := net.Listen("tcp", "0.0.0.0:9888")
 	if err != nil {
-		log.Logger.Fatalf("failed to start api server %v", err)
+		cmn.Exit(cmn.Fmt("faild to start api server %v", err))
 	}
 
 	go func() {
@@ -100,7 +94,7 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 			PrintErrorRes(writer, err)
 			return
 		}
-		txResponse, err := txbuilder.SubmitTx(&a.Chain, m)
+		txResponse, err := txbuilder.SubmitTx(a.Chain, m)
 		if err != nil {
 			log.Logger.Error(err.Error())
 			PrintErrorRes(writer, err.Error())

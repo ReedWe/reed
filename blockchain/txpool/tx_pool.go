@@ -13,10 +13,10 @@ type Txpool struct {
 	mtx       sync.RWMutex
 }
 
-func NewTxpool(store store.Store) *Txpool {
+func NewTxpool(store *store.Store) *Txpool {
 	return &Txpool{
 		Txs:   make(map[types.Hash]*types.Tx),
-		Store: store,
+		Store: *store,
 	}
 }
 

@@ -22,7 +22,7 @@ func GetNextDifficulty(p *types.Block) big.Int {
 		return p.BigNumber
 	}
 
-	//TODO get prev 2016 block
+	//TODO get prev 2016 blockmanager
 	var prevEpochBlockTime uint64
 	return CalcNextDifficulty(prevEpochBlockTime, p)
 }
@@ -35,7 +35,7 @@ func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 }
 
 //	Calculate a new difficulty
-//	p:prev block
+//	p:prev blockmanager
 func CalcNextDifficulty(prevEpochBlockTime uint64, p *types.Block) big.Int {
 	actualTimespan := p.Timestamp - prevEpochBlockTime
 
