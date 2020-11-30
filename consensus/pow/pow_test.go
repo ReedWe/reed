@@ -6,14 +6,14 @@ package pow
 
 import (
 	"fmt"
-	"github.com/reed/blockchain/block"
+	"github.com/reed/types"
 	"testing"
 )
 
 func TestCalcNextDifficulty(t *testing.T) {
 	oldDiff := DifficultyLimit()
 
-	p := &block.Block{
+	p := &types.Block{
 	}
 	p.Timestamp = 1606458831
 	p.BigNumber = oldDiff

@@ -1,8 +1,12 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"bytes"
-	"encoding/binary"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"github.com/reed/errors"
 	"github.com/reed/vm/vmcommon"
@@ -28,20 +32,17 @@ func (o *TxOutput) GenerateID() Hash {
 		isCoinBaseByte = []byte{0}
 	}
 
-	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, o.Amount)
-
-	datas := bytes.Join([][]byte{
+	data := bytes.Join([][]byte{
 		isCoinBaseByte,
 		split,
 		o.Address,
 		split,
-		amountByte,
+		byteconv.Uint64ToBytes(o.Amount),
 		split,
 		o.ScriptPk,
 	}, []byte{})
 
-	return BytesToHash(crypto.Sha256(datas))
+	return BytesToHash(crypto.Sha256(data))
 }
 
 func (o *TxOutput) GenerateLockingScript() []byte {
@@ -55,4 +56,3 @@ func (o *TxOutput) ValidateID() error {
 	}
 	return nil
 }
-

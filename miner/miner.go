@@ -6,11 +6,10 @@ package miner
 
 import (
 	"bytes"
-	"fmt"
-	"github.com/reed/blockchain/block"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
+	"github.com/reed/types"
 	"strconv"
 	"sync"
 )
@@ -26,12 +25,12 @@ const (
 type Miner struct {
 	sync.Mutex
 	working          bool
-	blockReceptionCh <-chan *block.Block
-	blockSendCh      chan<- *block.Block
+	blockReceptionCh <-chan *types.Block
+	blockSendCh      chan<- *types.Block
 	stopWorkCh       <-chan struct{}
 }
 
-func NewMiner(submitCh <-chan *block.Block) *Miner {
+func NewMiner(submitCh <-chan *types.Block) *Miner {
 	return &Miner{
 		working:          false,
 		blockReceptionCh: submitCh,
@@ -52,28 +51,44 @@ func (m *Miner) Start() error {
 }
 
 func (m *Miner) work() {
-	var block block.Block
+	var block types.Block
 	//calc difficulty
 	block.BigNumber = pow.GetNextDifficulty(&block)
 
-	extraNonce := uint64(0)
+	for {
+		born, stop := m.generateBlock(&block)
+		if born {
+			//broadcast new block
+		}
+		if stop {
+			break
+		}
+	}
+}
 
+func (m *Miner) generateBlock(block *types.Block) (born bool, stop bool) {
+	extraNonce := uint64(0)
 loop:
 	for {
 		select {
-		case b := <-m.blockReceptionCh:
+		case rblock := <-m.blockReceptionCh:
+			log.Logger.Infof("Received a block from blockReception channel.id=%x", rblock.GetHash())
 			// receive a new block from remote node
 			// block = fetch laest block
-			fmt.Println(b)
+			block = rblock
+			born = true
+			break loop
 		case <-m.stopWorkCh:
-			log.Logger.Info("receive a stop single,stop miner...")
+			log.Logger.Info("Received a stop single,stop miner...")
+			stop = true
 			break loop
 		default:
 			//just for no block,do nothing
 		}
 
 		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {
-			//broadcast new block
+			born = true
+			break loop
 		} else {
 			if block.Nonce == maxTries {
 				//reset nonce
@@ -81,15 +96,16 @@ loop:
 
 				//change coinbase tx's scriptSig and continue
 				extraNonce++
-				m.incrementExtraNonce(extraNonce, &block)
+				m.incrementExtraNonce(extraNonce, block)
 			} else {
 				block.Nonce++
 			}
 		}
 	}
+	return
 }
 
-func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *block.Block) {
+func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
 	txs := *cblock.Transactions
 	txs[0].TxInput[0].ScriptSig = bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 }
