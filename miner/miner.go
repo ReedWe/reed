@@ -6,7 +6,6 @@ package miner
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
@@ -52,39 +51,58 @@ func (m *Miner) Start() error {
 }
 
 func (m *Miner) work() {
-	var cblock types.Block
+	var block types.Block
+	//calc difficulty
+	block.BigNumber = pow.GetNextDifficulty(&block)
 
+	for {
+		born, stop := m.generateBlock(&block)
+		if born {
+			//broadcast new block
+		}
+		if stop {
+			break
+		}
+	}
+}
+
+func (m *Miner) generateBlock(block *types.Block) (born bool, stop bool) {
 	extraNonce := uint64(0)
-
 loop:
 	for {
 		select {
-		case b := <-m.blockReceptionCh:
+		case rblock := <-m.blockReceptionCh:
+			log.Logger.Infof("Received a block from blockReception channel.id=%x", rblock.GetHash())
 			// receive a new block from remote node
-			// cblock = fetch laest block
-			fmt.Println(b)
+			// block = fetch laest block
+			block = rblock
+			born = true
+			break loop
 		case <-m.stopWorkCh:
-			log.Logger.Info("receive a stop single,stop miner...")
+			log.Logger.Info("Received a stop single,stop miner...")
+			stop = true
 			break loop
 		default:
 			//just for no block,do nothing
 		}
 
-		if pow.CheckProofOfWork(cblock.Bits, cblock.GetHash()) {
-			//broadcast new block
+		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {
+			born = true
+			break loop
 		} else {
-			if cblock.Nonce == maxTries {
+			if block.Nonce == maxTries {
 				//reset nonce
-				cblock.Nonce = 0
+				block.Nonce = 0
 
 				//change coinbase tx's scriptSig and continue
 				extraNonce++
-				m.incrementExtraNonce(extraNonce, &cblock)
+				m.incrementExtraNonce(extraNonce, block)
 			} else {
-				cblock.Nonce++
+				block.Nonce++
 			}
 		}
 	}
+	return
 }
 
 func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {

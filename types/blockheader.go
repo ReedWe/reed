@@ -6,7 +6,7 @@ package types
 
 import (
 	"bytes"
-	"encoding/binary"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"math/big"
 )
@@ -17,25 +17,17 @@ type BlockHeader struct {
 	MerkleRootHash *Hash
 	Timestamp      uint64
 	Nonce          uint64
-	Bits           big.Int
+	BigNumber      big.Int
 }
 
 func (bh *BlockHeader) GetHash() Hash {
-	heightB := make([]byte, 8)
-	tsB := make([]byte, 8)
-	nonceB := make([]byte, 8)
-
-	binary.LittleEndian.PutUint64(heightB, bh.Height)
-	binary.LittleEndian.PutUint64(tsB, bh.Height)
-	binary.LittleEndian.PutUint64(nonceB, bh.Height)
-
 	msg := bytes.Join([][]byte{
-		heightB,
+		byteconv.Uint64ToBytes(bh.Height),
 		bh.PrevBlockHash.Bytes(),
 		bh.MerkleRootHash.Bytes(),
-		tsB,
-		nonceB,
-		bh.Bits.Bytes(),
+		byteconv.Uint64ToBytes(bh.Timestamp),
+		byteconv.Uint64ToBytes(bh.Nonce),
+		bh.BigNumber.Bytes(),
 	}, []byte{})
 
 	return BytesToHash(crypto.Sha256(msg))

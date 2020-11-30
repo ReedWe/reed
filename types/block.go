@@ -4,3 +4,5 @@ type Block struct {
 	BlockHeader
 	Transactions *[]Tx
 }
+
+

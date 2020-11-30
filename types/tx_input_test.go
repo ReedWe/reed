@@ -1,9 +1,13 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"github.com/reed/vm/vmcommon"
 	"github.com/reed/wallet"
@@ -23,20 +27,15 @@ func TestTxInput_GenerateID(t *testing.T) {
 	id := input.GenerateID()
 
 	split := []byte(":")
-	var sourcePosByte = make([]byte, 4)
-	binary.LittleEndian.PutUint32(sourcePosByte, 0)
-
-	var amountByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amountByte, 10)
 
 	b := bytes.Join([][]byte{
 		spoutId,
 		split,
 		spsrcId,
 		split,
-		sourcePosByte,
+		byteconv.Uint64ToBytes(0),
 		split,
-		amountByte,
+		byteconv.Uint64ToBytes(10),
 		split,
 		scriptPk,
 	}, []byte{})

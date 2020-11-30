@@ -1,9 +1,13 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"github.com/reed/vm/vmcommon"
 	"testing"
@@ -23,12 +27,9 @@ func TestTxOutput_GenerateID(t *testing.T) {
 
 	id := output.GenerateID()
 
-	var amtByte = make([]byte, 8)
-	binary.LittleEndian.PutUint64(amtByte, amt)
-
 	var datas [][]byte
 	split := []byte(":")
-	datas = append(datas, []byte{0}, split, addr, split, amtByte, split, scriptPK)
+	datas = append(datas, []byte{0}, split, addr, split, byteconv.Uint64ToBytes(amt), split, scriptPK)
 
 	h := crypto.Sha256(datas...)
 
