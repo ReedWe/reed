@@ -10,4 +10,10 @@ type Store interface {
 	GetUtxo(id []byte) (*types.UTXO, error)
 
 	SaveUtxos(expiredUtxoIds []types.Hash, utxos *[]types.UTXO) error
+
+	GetHighestBlock() (*types.Hash, error)
+
+	GetBlock(hash []byte) (*types.Block, error)
+
+	AddBlock(block *types.Block) error
 }

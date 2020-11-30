@@ -18,6 +18,7 @@ type BlockHeader struct {
 	Timestamp      uint64
 	Nonce          uint64
 	BigNumber      big.Int
+	Version        uint64
 }
 
 func (bh *BlockHeader) GetHash() Hash {
@@ -28,6 +29,7 @@ func (bh *BlockHeader) GetHash() Hash {
 		byteconv.Uint64ToBytes(bh.Timestamp),
 		byteconv.Uint64ToBytes(bh.Nonce),
 		bh.BigNumber.Bytes(),
+		byteconv.Uint64ToBytes(bh.Version),
 	}, []byte{})
 
 	return BytesToHash(crypto.Sha256(msg))

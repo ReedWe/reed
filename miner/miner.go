@@ -58,7 +58,7 @@ func (m *Miner) work() {
 	for {
 		born, stop := m.generateBlock(&block)
 		if born {
-			//broadcast new block
+			//broadcast new blockmanager
 		}
 		if stop {
 			break
@@ -72,9 +72,9 @@ loop:
 	for {
 		select {
 		case rblock := <-m.blockReceptionCh:
-			log.Logger.Infof("Received a block from blockReception channel.id=%x", rblock.GetHash())
-			// receive a new block from remote node
-			// block = fetch laest block
+			log.Logger.Infof("Received a blockmanager from blockReception channel.id=%x", rblock.GetHash())
+			// receive a new blockmanager from remote node
+			// blockmanager = fetch laest blockmanager
 			block = rblock
 			born = true
 			break loop
@@ -83,7 +83,7 @@ loop:
 			stop = true
 			break loop
 		default:
-			//just for no block,do nothing
+			//just for no blockmanager,do nothing
 		}
 
 		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {
