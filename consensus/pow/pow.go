@@ -6,7 +6,6 @@ package pow
 
 import (
 	"encoding/hex"
-	"github.com/reed/blockchain/block"
 	"github.com/reed/types"
 	"math/big"
 )
@@ -17,7 +16,7 @@ const (
 	targetSpacing  = 10 * 60
 )
 
-func GetNextDifficulty(p *block.Block) big.Int {
+func GetNextDifficulty(p *types.Block) big.Int {
 
 	if p.Height%DifficultyAdjustmentInterval() != 0 {
 		return p.BigNumber
@@ -37,7 +36,7 @@ func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 
 //	Calculate a new difficulty
 //	p:prev block
-func CalcNextDifficulty(prevEpochBlockTime uint64, p *block.Block) big.Int {
+func CalcNextDifficulty(prevEpochBlockTime uint64, p *types.Block) big.Int {
 	actualTimespan := p.Timestamp - prevEpochBlockTime
 
 	if actualTimespan < targetTimespan/4 {

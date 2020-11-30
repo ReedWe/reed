@@ -2,26 +2,25 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-package block
+package types
 
 import (
 	"bytes"
 	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
-	"github.com/reed/types"
 	"math/big"
 )
 
-type Header struct {
+type BlockHeader struct {
 	Height         uint64
-	PrevBlockHash  *types.Hash
-	MerkleRootHash *types.Hash
+	PrevBlockHash  *Hash
+	MerkleRootHash *Hash
 	Timestamp      uint64
 	Nonce          uint64
 	BigNumber      big.Int
 }
 
-func (bh *Header) GetHash() types.Hash {
+func (bh *BlockHeader) GetHash() Hash {
 	msg := bytes.Join([][]byte{
 		byteconv.Uint64ToBytes(bh.Height),
 		bh.PrevBlockHash.Bytes(),
@@ -31,5 +30,5 @@ func (bh *Header) GetHash() types.Hash {
 		bh.BigNumber.Bytes(),
 	}, []byte{})
 
-	return types.BytesToHash(crypto.Sha256(msg))
+	return BytesToHash(crypto.Sha256(msg))
 }
