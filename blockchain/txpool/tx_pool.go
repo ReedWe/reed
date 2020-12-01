@@ -24,7 +24,7 @@ func (tp *Txpool) AddTx(tx *types.Tx) error {
 	tp.mtx.Lock()
 	defer tp.mtx.Unlock()
 
-	return tp.Store.AddTx(tx)
+	return tp.Store.SaveTx(tx)
 }
 
 func (tp *Txpool) GetTx(txId *types.Hash) (*types.Tx, error) {
