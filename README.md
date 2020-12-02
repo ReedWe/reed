@@ -5,7 +5,7 @@ Reed 是一个用于学习交流的开源区块链项目。区块链项目虽说
 
 Reed is an open-source blockchain project for learning and communication. Although we don't need any new technology to develop a blockchain project, there is still a lot of knowledge covered, like P2P, Cryptology, Consensus Algorithms, UTXO Model-based Virtual Machine, etc. Developing such a project can help us master these technologies.
 
-Reed is a "decentrialized ledger" with almost the same functions as Bitcoin, and most of its developing procedures refer to Bitcoin. While for this small project, Bitcoin is still too bloated, so we delete some unnecessary functions like Segregated Witness which though optimizes the blocks. Our priority is to run the Reed (at least the first version). Alternatively, we put the ScriptSig/ScriptPk directly in the blocks. The Multi-signature Scheme is also deleted, and only the P2PKH payment method is kept. Our goal is to use the minimal functions to construct a "decentralized ledger".
+Reed is a "decentrialized ledger" with almost the same functions as Bitcoin, and most of its developing procedures refer to Bitcoin. While for this small project, Bitcoin is still too bloated, so we will delete some unnecessary functions like Segregated Witness which though optimizes the blocks. Our priority is to run the Reed (at least the first version). Alternatively, we put the ScriptSig/ScriptPk directly in the blocks. We also delete the Multi-signature Scheme and only retain the P2PKH payment method, since our goal is to use the minimal functions to construct a "decentralized ledger".
 
 ## Framework
 ![reed framework](doc/framework.jpg)
