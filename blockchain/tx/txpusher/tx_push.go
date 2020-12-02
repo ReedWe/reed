@@ -1,3 +1,7 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package txpusher
 
 import (
@@ -29,10 +33,8 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return errors.Wrapf(recvTxErr, "txId errors. local=%x remote=%x", txId, tx.ID)
 	}
 
-	existTx, err := chain.Txpool.GetTx(&tx.ID)
-	if err != nil {
-		return err
-	}
+	existTx := chain.Txpool.GetTx(tx.ID)
+
 	if existTx != nil {
 		log.Logger.Infof("transaction exists already (id=%x)", tx.ID)
 		return nil
@@ -51,8 +53,8 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 
 	// TODO NOT HERE
 	//output utxo and save changed
-	utxos := blockchain.OutputsToUtxos(&tx.ID, &tx.TxOutput)
-	if err = blockchain.UtxoChange(&chain.Store, &tx.TxInput, utxos); err != nil {
+	utxos := blockchain.OutputsToUtxos(&tx.ID, tx.TxOutput)
+	if err = blockchain.UtxoChange(&chain.Store, tx.TxInput, utxos); err != nil {
 		return err
 	}
 

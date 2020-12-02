@@ -9,6 +9,7 @@ import (
 	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"math/big"
+	"time"
 )
 
 type BlockHeader struct {
@@ -23,14 +24,36 @@ type BlockHeader struct {
 
 func (bh *BlockHeader) GetHash() Hash {
 	msg := bytes.Join([][]byte{
-		byteconv.Uint64ToBytes(bh.Height),
+		byteconv.Uint64ToByte(bh.Height),
 		bh.PrevBlockHash.Bytes(),
 		bh.MerkleRootHash.Bytes(),
-		byteconv.Uint64ToBytes(bh.Timestamp),
-		byteconv.Uint64ToBytes(bh.Nonce),
+		byteconv.Uint64ToByte(bh.Timestamp),
+		byteconv.Uint64ToByte(bh.Nonce),
 		bh.BigNumber.Bytes(),
-		byteconv.Uint64ToBytes(bh.Version),
+		byteconv.Uint64ToByte(bh.Version),
 	}, []byte{})
 
 	return BytesToHash(crypto.Sha256(msg))
+}
+
+func (bh *BlockHeader) Copy() *BlockHeader {
+	return &BlockHeader{
+		Height:        bh.Height + 1,
+		PrevBlockHash: bh.GetHash(),
+		Timestamp:     uint64(time.Now().Unix()),
+		Nonce:         0,
+		BigNumber:     *new(big.Int),
+		Version:       10000,
+	}
+}
+
+func GenesisHeader() *BlockHeader {
+	return &BlockHeader{
+		Height:        0,
+		PrevBlockHash: GenesisBlockHash(),
+		Timestamp:     uint64(time.Now().Unix()),
+		Nonce:         0,
+		BigNumber:     *new(big.Int),
+		Version:       10000,
+	}
 }

@@ -11,7 +11,7 @@ import (
 
 func TestUint64ToBytes(t *testing.T) {
 	i := uint64(99999)
-	bytes := Uint64ToBytes(i)
+	bytes := Uint64ToByte(i)
 	fmt.Println(bytes)
 
 	i2 := ByteToUint64(bytes)

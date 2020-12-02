@@ -1,3 +1,7 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package txbuilder
 
 import (
@@ -36,7 +40,7 @@ func mockUTXO() *types.UTXO {
 
 	var utxo = &types.UTXO{
 		OutputId:  types.BytesToHash(var1),
-		SoureId:   types.BytesToHash(var2),
+		SourceId:  types.BytesToHash(var2),
 		SourcePos: 0,
 		Amount:    19,
 		Address:   var3,

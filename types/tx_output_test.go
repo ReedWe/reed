@@ -29,7 +29,7 @@ func TestTxOutput_GenerateID(t *testing.T) {
 
 	var datas [][]byte
 	split := []byte(":")
-	datas = append(datas, []byte{0}, split, addr, split, byteconv.Uint64ToBytes(amt), split, scriptPK)
+	datas = append(datas, []byte{0}, split, addr, split, byteconv.Uint64ToByte(amt), split, scriptPK)
 
 	h := crypto.Sha256(datas...)
 
