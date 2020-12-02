@@ -5,52 +5,139 @@
 package blockmanager
 
 import (
+	"fmt"
 	"github.com/reed/blockchain/store"
+	"github.com/reed/errors"
+	"github.com/reed/log"
 	"github.com/reed/types"
 	"sync"
 )
 
+//										/ [B1]				/ [B1]
+//	[A]			[A]<--[B1]			[A]					[A]
+//										\ [B2]				\ [B2]<--[C]
+//
+//	i[A]		i[A,B1]				i[A,B1,B2]			i[A,B1,B2,C]
+//	m[A]		m[A,B1]				m[A,B1]				m[A,B2,C]
+//
+//	i:index
+//	m:main
+
 type BlockManager struct {
-	store        *store.Store
-	HighestBlock *types.Hash
-	BlockIndex   *BlockIndex
-	mtx          sync.RWMutex
+	store      *store.Store
+	blockIndex *BlockIndex
+	errs       map[types.Hash]error
+	mtx        sync.RWMutex
 }
 
-func NewBlockManager(s *store.Store) (*BlockManager, error) {
-	highest, err := (*s).GetHighestBlock()
-	if err != nil {
-		return nil, err
-	}
+var (
+	addNewBlockErr = errors.New("add new block error")
+)
 
-	index, err := NewBlockIndex(s, highest)
+func NewBlockManager(s *store.Store, highestBlock *types.Block) (*BlockManager, error) {
+	index, err := NewBlockIndex(s, highestBlock)
 	if err != nil {
 		return nil, err
 	}
 
 	return &BlockManager{
-		store:        s,
-		HighestBlock: highest,
-		BlockIndex:   index,
+		store:      s,
+		blockIndex: index,
 	}, nil
 
 }
 
-func (bm *BlockManager) SaveNewBlock(block *types.Block) (exists bool, err error) {
+func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error) {
 	bm.mtx.Lock()
 	defer bm.mtx.Unlock()
 
-	if bm.BlockIndex.Exists(block) {
+	blockHash := block.GetHash()
+	if _, ok := bm.errs[blockHash]; ok {
+		log.Logger.Infof("block(hash=%x) exists in errs map", blockHash)
 		return true, nil
 	}
-	bm.BlockIndex.AddBlock(block)
+	if bm.blockIndex.exists(block) {
+		return true, nil
+	}
 
-	if err := (*bm.store).AddBlock(block); err != nil {
-		bm.BlockIndex.RollbackAddBlock(block)
+	highest, err := bm.HighestBlock()
+	if err != nil {
 		return false, err
 	}
-	hash := block.GetHash()
-	bm.HighestBlock = &hash
-
+	if block.PrevBlockHash == highest.GetHash() {
+		amRollbackFn := bm.blockIndex.addMain(block)
+		aiRollbackFn := bm.blockIndex.addIndex(block)
+		if err := (*bm.store).SaveBlockAndUpdateHighest(block); err != nil {
+			bm.errs[blockHash] = err
+			amRollbackFn()
+			aiRollbackFn()
+			return false, err
+		}
+	} else {
+		bm.blockIndex.addIndex(block)
+		if block.Height > highest.Height && block.BigNumber.Cmp(&highest.BigNumber) == 1 {
+			log.Logger.Infof("ready to reorganize...")
+			bm.reorganize(block)
+		}
+	}
 	return false, nil
+}
+
+func (bm *BlockManager) reorganize(block *types.Block) error {
+	reserves, discards, err := bm.calcFork(block, nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(reserves, discards)
+	return nil
+}
+
+func (bm *BlockManager) calcFork(block *types.Block, highestBlock *types.Block) ([]*types.Block, []*types.Block, error) {
+	var (
+		reserves []*types.Block
+		discards []*types.Block
+	)
+	subPoint := block
+	mainPoint := highestBlock
+
+	reserves = append(reserves, subPoint)
+	mainHeight := mainPoint.Height
+
+	for {
+		i, ok := bm.blockIndex.index[subPoint.PrevBlockHash]
+		if !ok {
+			break
+		}
+		if i.Height != mainHeight {
+			subPoint = i
+			reserves = append(reserves, i)
+		} else {
+			m := bm.blockIndex.main[mainHeight]
+			if i == m {
+				break
+			} else {
+				subPoint = i
+				mainPoint = m
+				reserves = append(reserves, i)
+				discards = append(discards, m)
+				mainHeight--
+			}
+		}
+	}
+
+	if subPoint.PrevBlockHash != mainPoint.PrevBlockHash {
+		log.Logger.Infof("sub chain longer but are orphans")
+		//subs are Orphans
+		return nil, nil, nil
+	}
+	return reserves, discards, nil
+}
+
+func (bm *BlockManager) HighestBlock() (*types.Block, error) {
+	block, err := (*bm.store).GetHighestBlock()
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
 }

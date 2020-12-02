@@ -12,17 +12,26 @@ import (
 
 type BlockIndex struct {
 	store *store.Store
-	index map[*types.Hash]*types.Block
+	index map[types.Hash]*types.Block
 	main  []*types.Block
 }
 
-func NewBlockIndex(s *store.Store, highestBlockHash *types.Hash) (*BlockIndex, error) {
+const (
+	mainArrayInterval = 24 * 6
+)
 
+func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, error) {
+	c := uint64(mainArrayInterval)
+	if highestBlock.Height > mainArrayInterval {
+		c = highestBlock.Height + mainArrayInterval
+	}
 	var bi = &BlockIndex{
 		store: s,
+		index: map[types.Hash]*types.Block{},
+		main:  make([]*types.Block, c, c),
 	}
 
-	blockHash := highestBlockHash
+	blockHash := highestBlock.GetHash()
 	for {
 		block, err := (*s).GetBlock(blockHash.Bytes())
 		if err != nil {
@@ -41,27 +50,40 @@ func NewBlockIndex(s *store.Store, highestBlockHash *types.Hash) (*BlockIndex, e
 	return bi, nil
 }
 
-func (bi *BlockIndex) Exists(block *types.Block) bool {
+func (bi *BlockIndex) exists(block *types.Block) bool {
 	blockHash := block.GetHash()
-	if bi.main[block.Height] != nil {
-		log.Logger.Info("bock(hash=%x height=%d) exists in main chain", blockHash, block.Height)
+	if _, ok := bi.index[blockHash]; ok {
+		log.Logger.Infof("bock(hash=%x) exists in index map", blockHash)
 		return true
 	}
-	if bi.index[&blockHash] != nil {
-		log.Logger.Info("bock(hash=%x) exists in index", blockHash)
+	if bi.main[block.Height] != nil {
+		log.Logger.Infof("bock(hash=%x height=%d) exists in main chain", blockHash, block.Height)
 		return true
 	}
 	return false
 }
 
-func (bi *BlockIndex) AddBlock(block *types.Block) {
-	blockHash := block.GetHash()
+func (bi *BlockIndex) addMain(block *types.Block) (rollbackFn func()) {
+	bi.maybeNeedExpansion()
 	bi.main[block.Height] = block
-	bi.index[&blockHash] = block
+	return func() {
+		bi.main[block.Height] = nil
+	}
 }
 
-func (bi *BlockIndex) RollbackAddBlock(block *types.Block) {
+func (bi *BlockIndex) addIndex(block *types.Block) (rollbackFn func()) {
 	blockHash := block.GetHash()
-	bi.main[block.Height] = nil
-	bi.index[&blockHash] = nil
+	bi.index[blockHash] = block
+	return func() {
+		delete(bi.index, blockHash)
+	}
+}
+
+func (bi *BlockIndex) maybeNeedExpansion() {
+	len := len(bi.main)
+	if len == cap(bi.main) {
+		newArr := make([]*types.Block, len+1, len+mainArrayInterval)
+		copy(newArr, bi.main)
+		bi.main = newArr
+	}
 }

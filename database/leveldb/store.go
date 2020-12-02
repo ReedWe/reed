@@ -30,10 +30,10 @@ func NewStore(db dbm.DB) *Store {
 	}
 }
 
-func (store *Store) AddTx(tx *types.Tx) error {
+func (store *Store) SaveTx(tx *types.Tx) error {
 	b, err := json.Marshal(tx)
 	if err != nil {
-		return errors.Wrapf(storeTxErr, "AddTx json marshal error")
+		return errors.Wrapf(storeTxErr, "SaveTx json marshal error")
 	}
 
 	store.db.Set(getKey(txPrefix, tx.ID.Bytes()), b)
@@ -85,10 +85,17 @@ func (store *Store) SaveUtxos(expiredUtxoIds []types.Hash, utxos *[]types.UTXO) 
 	return nil
 }
 
-func (store *Store) GetHighestBlock() (*types.Hash, error) {
+func (store *Store) GetHighestBlock() (*types.Block, error) {
 	data := store.db.Get([]byte(highestBlock))
-	hash := types.BytesToHash(data)
-	return &hash, nil
+	if data == nil {
+		return nil, nil
+	}
+
+	block := &types.Block{}
+	if err := json.Unmarshal(data, &block); err != nil {
+		return nil, errors.Wrapf(err, "GetHighestBlock json umarshal error")
+	}
+	return block, nil
 }
 
 func (store *Store) GetBlock(hash []byte) (*types.Block, error) {
@@ -98,20 +105,20 @@ func (store *Store) GetBlock(hash []byte) (*types.Block, error) {
 	}
 	block := &types.Block{}
 	if err := json.Unmarshal(data, &block); err != nil {
-		return nil, errors.Wrapf(err, "GetBlock(hash=%) json umarshal error", hash)
+		return nil, errors.Wrapf(err, "GetBlock(hash=%x) json umarshal error", hash)
 	}
 	return block, nil
 }
 
-func (store *Store) AddBlock(block *types.Block) error {
+func (store *Store) SaveBlockAndUpdateHighest(block *types.Block) error {
 	b, err := json.Marshal(block)
 	if err != nil {
-		return errors.Wrapf(storeBlockErr, "AddBlock json marshal error")
+		return errors.Wrapf(storeBlockErr, "SaveBlock(hash=%x) json marshal error", block.GetHash())
 	}
 
 	batch := store.db.NewBatch()
 	batch.Set(getKey(blockPrefix, block.GetHash().Bytes()), b)
-	batch.Set([]byte(highestBlock), block.GetHash().Bytes())
+	batch.Set([]byte(highestBlock), b)
 	batch.Write()
 	return nil
 }
