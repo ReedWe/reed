@@ -6,6 +6,7 @@ package miner
 
 import (
 	"bytes"
+	bm "github.com/reed/blockchain/blockmanager"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
@@ -15,7 +16,7 @@ import (
 )
 
 var (
-	startErr = errors.New("miner start error")
+	startErr = errors.New("miner failed to start")
 )
 
 const (
@@ -25,6 +26,7 @@ const (
 type Miner struct {
 	sync.Mutex
 	working          bool
+	blockManager     *bm.BlockManager
 	blockReceptionCh <-chan *types.Block
 	blockSendCh      chan<- *types.Block
 	stopWorkCh       <-chan struct{}
@@ -58,6 +60,8 @@ func (m *Miner) work() {
 	for {
 		born, stop := m.generateBlock(&block)
 		if born {
+			m.blockManager.AddNewBlock(&block)
+
 			//broadcast new blockmanager
 		}
 		if stop {
@@ -73,8 +77,8 @@ loop:
 		select {
 		case rblock := <-m.blockReceptionCh:
 			log.Logger.Infof("Received a blockmanager from blockReception channel.id=%x", rblock.GetHash())
-			// receive a new blockmanager from remote node
-			// blockmanager = fetch laest blockmanager
+			// receive a new block from remote node
+			// block = fetch laest block
 			block = rblock
 			born = true
 			break loop
@@ -83,7 +87,7 @@ loop:
 			stop = true
 			break loop
 		default:
-			//just for no blockmanager,do nothing
+			//just for no block,do nothing
 		}
 
 		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {

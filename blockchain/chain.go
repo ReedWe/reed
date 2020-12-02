@@ -14,7 +14,11 @@ type Chain struct {
 
 func NewChain(s store.Store) (*Chain, error) {
 	tp := txpool.NewTxpool(&s)
-	blockMgr, err := bm.NewBlockManager(&s)
+	highestBlock, err := s.GetHighestBlock()
+	if err != nil {
+		return nil, err
+	}
+	blockMgr, err := bm.NewBlockManager(&s, highestBlock)
 	if err != nil {
 		return nil, err
 	}
