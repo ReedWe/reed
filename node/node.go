@@ -4,12 +4,3 @@
 
 package node
 
-import (
-	"github.com/reed/types"
-	"github.com/tendermint/tmlibs/common"
-)
-
-type Node struct {
-	common.BaseService
-	api *types.API
-}

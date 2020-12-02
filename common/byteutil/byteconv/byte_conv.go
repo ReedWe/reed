@@ -16,8 +16,16 @@ func ByteToUint64(b []byte) uint64 {
 	return data
 }
 
-func Uint64ToBytes(n uint64) []byte {
+func Uint64ToByte(n uint64) []byte {
 	buf := bytes.NewBuffer([]byte{})
 	binary.Write(buf, binary.BigEndian, n)
 	return buf.Bytes()
+}
+
+func BoolToByte(b bool) []byte {
+	byt := []byte{1}
+	if !b {
+		byt = []byte{0}
+	}
+	return byt
 }

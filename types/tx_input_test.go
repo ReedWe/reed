@@ -33,9 +33,9 @@ func TestTxInput_GenerateID(t *testing.T) {
 		split,
 		spsrcId,
 		split,
-		byteconv.Uint64ToBytes(0),
+		byteconv.Uint64ToByte(0),
 		split,
-		byteconv.Uint64ToBytes(10),
+		byteconv.Uint64ToByte(10),
 		split,
 		scriptPk,
 	}, []byte{})

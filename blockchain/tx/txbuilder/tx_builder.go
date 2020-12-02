@@ -1,3 +1,7 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package txbuilder
 
 import (
@@ -73,15 +77,15 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 
 func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 
-	var inputs []types.TxInput
-	var outputs []types.TxOutput
+	var inputs []*types.TxInput
+	var outputs []*types.TxOutput
 
 	for _, inp := range req.TxInputs {
 		b, err := hex.DecodeString(inp.SpendOutputId)
 		if err != nil {
 			return nil, errors.WithDetail(submitTxErr, "invalid spend_output_id format")
 		}
-		inputs = append(inputs, types.TxInput{
+		inputs = append(inputs, &types.TxInput{
 			Spend: types.Spend{SpendOutputId: types.BytesToHash(b)},
 		})
 	}
@@ -92,11 +96,7 @@ func mapTx(req *types.SubmitTxRequest) (*types.Tx, error) {
 			return nil, errors.WithDetail(submitTxErr, "invalid output.address format")
 		}
 
-		outputs = append(outputs, types.TxOutput{
-			IsCoinBase: false,
-			Address:    addr,
-			Amount:     iop.Amount,
-		})
+		outputs = append(outputs, types.NewTxOutput(false, addr, iop.Amount))
 	}
 
 	tx := &types.Tx{
@@ -126,23 +126,18 @@ func maybeFillSelfOutput(tx *types.Tx, pub ed25519.PublicKey) error {
 	if err != nil {
 		return err
 	}
-
 	if sumOutput > sumInput {
 		return errors.Wrap(txAssetAmtErr, "not enough inputs amount")
 	}
 	if sumInput > sumOutput {
 		// auto generate self output
-		tx.TxOutput = append(tx.TxOutput, types.TxOutput{
-			IsCoinBase: false,
-			Address:    pub,
-			Amount:     sumInput - sumOutput,
-		})
+		tx.TxOutput = append(tx.TxOutput, types.NewTxOutput(false, pub, sumInput-sumOutput))
 	}
 	return nil
 }
 
-func mergeSameAddrOutput(outputs []types.TxOutput) ([]types.TxOutput, error) {
-	var newOutputs []types.TxOutput
+func mergeSameAddrOutput(outputs []*types.TxOutput) ([]*types.TxOutput, error) {
+	var newOutputs []*types.TxOutput
 	addrMap := map[string]*types.TxOutput{}
 	var err error
 	for _, output := range outputs {
@@ -154,7 +149,7 @@ func mergeSameAddrOutput(outputs []types.TxOutput) ([]types.TxOutput, error) {
 			}
 		} else {
 			newOutputs = append(newOutputs, output)
-			addrMap[string(output.Address)] = &output
+			addrMap[string(output.Address)] = output
 		}
 	}
 	return newOutputs, nil
