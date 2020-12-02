@@ -17,18 +17,15 @@ import (
 //	[A]			[A]<--[B1]			[A]					[A]
 //										\ [B2]				\ [B2]<--[C]
 //
-//	f[]			f[]					f[B2]				f[B1]
 //	i[A]		i[A,B1]				i[A,B1,B2]			i[A,B1,B2,C]
 //	m[A]		m[A,B1]				m[A,B1]				m[A,B2,C]
 //
-//	f:failed
 //	i:index
 //	m:main
 
 type BlockManager struct {
 	store      *store.Store
 	blockIndex *BlockIndex
-	failed     map[types.Hash]*types.Block
 	errs       map[types.Hash]error
 	mtx        sync.RWMutex
 }
@@ -37,12 +34,8 @@ var (
 	addNewBlockErr = errors.New("add new block error")
 )
 
-func NewBlockManager(s *store.Store) (*BlockManager, error) {
-	highest, err := (*s).GetHighestBlock()
-	if err != nil {
-		return nil, err
-	}
-	index, err := NewBlockIndex(s, highest)
+func NewBlockManager(s *store.Store, highestBlock *types.Block) (*BlockManager, error) {
+	index, err := NewBlockIndex(s, highestBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +56,6 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 		log.Logger.Infof("block(hash=%x) exists in errs map", blockHash)
 		return true, nil
 	}
-	if _, ok := bm.failed[blockHash]; ok {
-		log.Logger.Infof("block(hash=%x) exists in failed map", blockHash)
-		return true, nil
-	}
 	if bm.blockIndex.exists(block) {
 		return true, nil
 	}
@@ -75,7 +64,7 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 	if err != nil {
 		return false, err
 	}
-	if *block.PrevBlockHash == highest.GetHash() {
+	if block.PrevBlockHash == highest.GetHash() {
 		amRollbackFn := bm.blockIndex.addMain(block)
 		aiRollbackFn := bm.blockIndex.addIndex(block)
 		if err := (*bm.store).SaveBlockAndUpdateHighest(block); err != nil {
@@ -86,7 +75,6 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 		}
 	} else {
 		bm.blockIndex.addIndex(block)
-		bm.failed[blockHash] = block
 		if block.Height > highest.Height && block.BigNumber.Cmp(&highest.BigNumber) == 1 {
 			log.Logger.Infof("ready to reorganize...")
 			bm.reorganize(block)
@@ -96,7 +84,7 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 }
 
 func (bm *BlockManager) reorganize(block *types.Block) error {
-	reserves, discards, err := bm.calcFork(block)
+	reserves, discards, err := bm.calcFork(block, nil)
 	if err != nil {
 		return err
 	}
@@ -105,22 +93,19 @@ func (bm *BlockManager) reorganize(block *types.Block) error {
 	return nil
 }
 
-func (bm *BlockManager) calcFork(block *types.Block) ([]*types.Block, []*types.Block, error) {
+func (bm *BlockManager) calcFork(block *types.Block, highestBlock *types.Block) ([]*types.Block, []*types.Block, error) {
 	var (
 		reserves []*types.Block
 		discards []*types.Block
 	)
 	subPoint := block
-	mainPoint, err := bm.HighestBlock()
-	if err != nil {
-		return nil, nil, err
-	}
+	mainPoint := highestBlock
 
 	reserves = append(reserves, subPoint)
 	mainHeight := mainPoint.Height
 
 	for {
-		i, ok := bm.blockIndex.index[*subPoint.PrevBlockHash]
+		i, ok := bm.blockIndex.index[subPoint.PrevBlockHash]
 		if !ok {
 			break
 		}
@@ -133,6 +118,7 @@ func (bm *BlockManager) calcFork(block *types.Block) ([]*types.Block, []*types.B
 				break
 			} else {
 				subPoint = i
+				mainPoint = m
 				reserves = append(reserves, i)
 				discards = append(discards, m)
 				mainHeight--
@@ -141,6 +127,7 @@ func (bm *BlockManager) calcFork(block *types.Block) ([]*types.Block, []*types.B
 	}
 
 	if subPoint.PrevBlockHash != mainPoint.PrevBlockHash {
+		log.Logger.Infof("sub chain longer but are orphans")
 		//subs are Orphans
 		return nil, nil, nil
 	}

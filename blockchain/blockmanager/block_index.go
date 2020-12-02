@@ -21,10 +21,14 @@ const (
 )
 
 func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, error) {
+	c := uint64(mainArrayInterval)
+	if highestBlock.Height > mainArrayInterval {
+		c = highestBlock.Height + mainArrayInterval
+	}
 	var bi = &BlockIndex{
 		store: s,
 		index: map[types.Hash]*types.Block{},
-		main:  make([]*types.Block, 0, highestBlock.Height+mainArrayInterval),
+		main:  make([]*types.Block, c, c),
 	}
 
 	blockHash := highestBlock.GetHash()
@@ -41,7 +45,7 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 			break
 		}
 		//prev
-		blockHash = *block.PrevBlockHash
+		blockHash = block.PrevBlockHash
 	}
 	return bi, nil
 }
@@ -49,11 +53,11 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 func (bi *BlockIndex) exists(block *types.Block) bool {
 	blockHash := block.GetHash()
 	if _, ok := bi.index[blockHash]; ok {
-		log.Logger.Info("bock(hash=%x) exists in index map", blockHash)
+		log.Logger.Infof("bock(hash=%x) exists in index map", blockHash)
 		return true
 	}
 	if bi.main[block.Height] != nil {
-		log.Logger.Info("bock(hash=%x height=%d) exists in main chain", blockHash, block.Height)
+		log.Logger.Infof("bock(hash=%x height=%d) exists in main chain", blockHash, block.Height)
 		return true
 	}
 	return false

@@ -13,8 +13,8 @@ import (
 
 type BlockHeader struct {
 	Height         uint64
-	PrevBlockHash  *Hash
-	MerkleRootHash *Hash
+	PrevBlockHash  Hash
+	MerkleRootHash Hash
 	Timestamp      uint64
 	Nonce          uint64
 	BigNumber      big.Int
