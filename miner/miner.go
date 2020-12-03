@@ -6,17 +6,21 @@ package miner
 
 import (
 	"bytes"
+	"fmt"
+	bc "github.com/reed/blockchain"
 	bm "github.com/reed/blockchain/blockmanager"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
+	"github.com/reed/wallet"
 	"strconv"
 	"sync"
 )
 
 var (
 	startErr = errors.New("miner failed to start")
+	workErr  = errors.New("miner failed to work")
 )
 
 const (
@@ -25,6 +29,8 @@ const (
 
 type Miner struct {
 	sync.Mutex
+	wallet           *wallet.Wallet
+	chain            *bc.Chain
 	working          bool
 	blockManager     *bm.BlockManager
 	blockReceptionCh <-chan *types.Block
@@ -32,10 +38,12 @@ type Miner struct {
 	stopWorkCh       <-chan struct{}
 }
 
-func NewMiner(submitCh <-chan *types.Block) *Miner {
+func NewMiner(c *bc.Chain, w *wallet.Wallet, sch <-chan *types.Block) *Miner {
 	return &Miner{
+		wallet:           w,
+		chain:            c,
 		working:          false,
-		blockReceptionCh: submitCh,
+		blockReceptionCh: sch,
 	}
 }
 
@@ -47,22 +55,37 @@ func (m *Miner) Start() error {
 		return errors.Wrap(startErr, "miner has started.")
 	}
 
-	go m.work()
+	m.work()
 
 	return nil
 }
 
 func (m *Miner) work() {
-	var block types.Block
-	//calc difficulty
-	block.BigNumber = pow.GetNextDifficulty(&block)
+	highest, err := m.chain.BlockManager.HighestBlock()
+	if err != nil {
+		log.Logger.Error(workErr, err)
+		return
+	}
+	block, err := m.buildBlock(highest)
+	if err != nil {
+		log.Logger.Error(workErr, err)
+		return
+	}
 
 	for {
-		born, stop := m.generateBlock(&block)
+		born, stop := m.generateBlock(block)
 		if born {
-			m.blockManager.AddNewBlock(&block)
-
+			fmt.Printf("mint a new block %x %v \n", block.GetHash(), block)
+			break
+			m.blockManager.AddNewBlock(block)
 			//broadcast new blockmanager
+
+			newBlock, err := m.buildBlock(highest)
+			if err != nil {
+				log.Logger.Error(workErr, err)
+				break
+			}
+			block = newBlock
 		}
 		if stop {
 			break
@@ -109,7 +132,37 @@ loop:
 	return
 }
 
+func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
+	var newBlock *types.Block
+	if pre == nil {
+		newBlock = types.GenesisBlock()
+		newBlock.BigNumber = pow.DifficultyLimit()
+	} else {
+		newBlock = &types.Block{
+			BlockHeader:  *pre.Copy(),
+			Transactions: []*types.Tx{},
+		}
+	}
+
+	txs := m.chain.Txpool.GetTxs()
+	cbTx, err := types.NewCoinbaseTx(newBlock.Height, m.wallet.Pub, bc.CalcCoinbaseAmt(newBlock.Height))
+	if err != nil {
+		return nil, err
+	}
+	if len(txs) == 0 {
+		txs = append(txs, cbTx)
+	} else {
+		txs = append(txs, nil)
+		copy(txs[1:], txs[:len(txs)-1])
+		txs[0] = cbTx
+	}
+	newBlock.Transactions = txs
+
+	//recalculate difficulty
+	newBlock.BigNumber = pow.GetNextDifficulty(newBlock, m.blockManager.GetAncestor)
+	return newBlock, nil
+}
+
 func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
-	txs := *cblock.Transactions
-	txs[0].TxInput[0].ScriptSig = bytes.Join([][]byte{txs[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
+	cblock.Transactions[0].TxInput[0].ScriptSig = bytes.Join([][]byte{cblock.Transactions[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 }

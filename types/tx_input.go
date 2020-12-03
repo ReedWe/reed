@@ -24,7 +24,7 @@ type TxInput struct {
 }
 
 func (i *TxInput) SetSpend(utxo *UTXO) {
-	i.SoureId = utxo.SoureId
+	i.SoureId = utxo.SourceId
 	i.SourcePos = utxo.SourcePos
 	i.Amount = utxo.Amount
 	i.ScriptPk = utxo.ScriptPk
@@ -37,9 +37,9 @@ func (i *TxInput) GenerateID() Hash {
 		split,
 		i.SoureId.Bytes(),
 		split,
-		byteconv.Uint64ToBytes(i.SourcePos),
+		byteconv.Uint64ToByte(i.SourcePos),
 		split,
-		byteconv.Uint64ToBytes(i.Amount),
+		byteconv.Uint64ToByte(i.Amount),
 		split,
 		i.ScriptPk,
 	}, []byte{})

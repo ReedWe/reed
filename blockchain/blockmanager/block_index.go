@@ -21,14 +21,22 @@ const (
 )
 
 func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, error) {
+	h := uint64(0)
 	c := uint64(mainArrayInterval)
-	if highestBlock.Height > mainArrayInterval {
-		c = highestBlock.Height + mainArrayInterval
+
+	if highestBlock != nil {
+		h = highestBlock.Height
+	}
+	if h > mainArrayInterval {
+		c = h + mainArrayInterval
 	}
 	var bi = &BlockIndex{
 		store: s,
 		index: map[types.Hash]*types.Block{},
-		main:  make([]*types.Block, c, c),
+		main:  make([]*types.Block, c),
+	}
+	if highestBlock == nil {
+		return bi, nil
 	}
 
 	blockHash := highestBlock.GetHash()
@@ -82,7 +90,7 @@ func (bi *BlockIndex) addIndex(block *types.Block) (rollbackFn func()) {
 func (bi *BlockIndex) maybeNeedExpansion() {
 	len := len(bi.main)
 	if len == cap(bi.main) {
-		newArr := make([]*types.Block, len+1, len+mainArrayInterval)
+		newArr := make([]*types.Block, len+mainArrayInterval)
 		copy(newArr, bi.main)
 		bi.main = newArr
 	}

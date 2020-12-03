@@ -6,32 +6,35 @@ package pow
 
 import (
 	"encoding/hex"
+	"fmt"
 	"github.com/reed/types"
 	"math/big"
 )
 
 const (
-	diffLimitHex   = "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	diffLimitHex = "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	//diffLimitHex   = "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	targetTimespan = 14 * 24 * 60 * 60 // two weeks
 	targetSpacing  = 10 * 60
 )
 
-func GetNextDifficulty(p *types.Block) big.Int {
-
-	if p.Height%DifficultyAdjustmentInterval() != 0 {
-		return p.BigNumber
+func GetNextDifficulty(block *types.Block, getAncestor func(height uint64) *types.Block) big.Int {
+	if block.Height == 1 || block.Height%DifficultyAdjustmentInterval() != 1 {
+		return block.BigNumber
 	}
-
-	//TODO get prev 2016 blockmanager
-	var prevEpochBlockTime uint64
-	return CalcNextDifficulty(prevEpochBlockTime, p)
+	ancestor := getAncestor(block.Height - DifficultyAdjustmentInterval())
+	return CalcNextDifficulty(ancestor.Timestamp, block)
 }
 
 func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 	var hashIntVal big.Int
 
 	hashIntVal.SetBytes(hash.Bytes())
-	return target.Cmp(&hashIntVal) == -1
+
+	fmt.Printf("hash %x\n", hash)
+	fmt.Printf("target %v\n", target)
+
+	return hashIntVal.Cmp(&target) == -1
 }
 
 //	Calculate a new difficulty

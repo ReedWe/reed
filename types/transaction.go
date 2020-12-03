@@ -1,20 +1,25 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package types
 
 import (
 	"github.com/reed/common/math"
 	"github.com/reed/crypto"
 	"github.com/reed/errors"
+	"strconv"
 )
 
 var (
-	txOutputCheckErr = errors.New("transaction outpu check error")
+	txOutputCheckErr = errors.New("transaction output check error")
 )
 
 type Tx struct {
 	ID Hash `json:"id"`
 
-	TxInput  []TxInput  `json:"input"`
-	TxOutput []TxOutput `json:"output"`
+	TxInput  []*TxInput  `json:"input"`
+	TxOutput []*TxOutput `json:"output"`
 }
 
 func (tx *Tx) GenerateID() (*Hash, error) {
@@ -60,8 +65,6 @@ func (tx *Tx) Completion(getUtxo func(spendOutputId Hash) (*UTXO, error)) error 
 		if len(output.Address) != 32 {
 			return errors.Wrapf(txOutputCheckErr, "invalid output address. len(%d).expect 36", len(output.Address))
 		}
-		output.ScriptPk = output.GenerateLockingScript()
-		output.ID = output.GenerateID()
 	}
 	return nil
 }
@@ -80,6 +83,25 @@ func (tx *Tx) IsAssetAmtEqual() (sumInput uint64, sumOutput uint64, err error) {
 	return
 }
 
+func NewCoinbaseTx(curHeight uint64, coinbaseAddr []byte, amt uint64) (*Tx, error) {
+	i := &TxInput{ScriptSig: []byte("height:" + strconv.FormatUint(curHeight, 10))}
+	i.ID = i.GenerateID()
+
+	o := NewTxOutput(true, coinbaseAddr, amt)
+
+	var inps []*TxInput
+	var iops []*TxOutput
+
+	inps = append(inps, i)
+	iops = append(iops, o)
+	tx := &Tx{TxInput: inps, TxOutput: iops}
+	id, err := tx.GenerateID()
+	if err != nil {
+		return nil, err
+	}
+	tx.ID = *id
+	return tx, nil
+}
 
 //func (tx *Transaction) sign() {
 //

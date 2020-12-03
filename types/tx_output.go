@@ -24,20 +24,26 @@ var (
 	outpuErr = errors.New("transaction output error")
 )
 
+func NewTxOutput(isCoinBase bool, address []byte, amount uint64) *TxOutput {
+	o := &TxOutput{
+		IsCoinBase: isCoinBase,
+		Address:    address,
+		Amount:     amount,
+	}
+	o.ScriptPk = o.GenerateLockingScript()
+	o.ID = o.GenerateID()
+	return o
+}
+
 func (o *TxOutput) GenerateID() Hash {
 	split := []byte(":")
 
-	isCoinBaseByte := []byte{1}
-	if !o.IsCoinBase {
-		isCoinBaseByte = []byte{0}
-	}
-
 	data := bytes.Join([][]byte{
-		isCoinBaseByte,
+		byteconv.BoolToByte(o.IsCoinBase),
 		split,
 		o.Address,
 		split,
-		byteconv.Uint64ToBytes(o.Amount),
+		byteconv.Uint64ToByte(o.Amount),
 		split,
 		o.ScriptPk,
 	}, []byte{})

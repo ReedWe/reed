@@ -141,3 +141,9 @@ func (bm *BlockManager) HighestBlock() (*types.Block, error) {
 	}
 	return block, nil
 }
+
+func (bm *BlockManager) GetAncestor(height uint64) *types.Block {
+	bm.mtx.RLock()
+	defer bm.mtx.RUnlock()
+	return bm.blockIndex.main[height]
+}

@@ -67,19 +67,18 @@ func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	return utxo, nil
 }
 
-func (store *Store) SaveUtxos(expiredUtxoIds []types.Hash, utxos *[]types.UTXO) error {
-
+func (store *Store) SaveUtxos(expiredUtxoIds []*types.Hash, utxos []*types.UTXO) error {
 	batch := store.db.NewBatch()
 	for _, e := range expiredUtxoIds {
 		batch.Delete(e.Bytes())
 	}
 
-	for _, utxo := range *utxos {
+	for _, utxo := range utxos {
 		b, err := json.Marshal(utxo)
 		if err != nil {
-			return errors.Wrapf(storeUtxoErr, "SaveUtxos json marshal error")
+			return errors.Wrapf(storeUtxoErr, "SaveUtxos(ID=%x) json marshal error", utxo.ID)
 		}
-		batch.Set(getKey(utxoPrefix, utxo.OutputId.Bytes()), b)
+		batch.Set(getKey(utxoPrefix, utxo.ID.Bytes()), b)
 	}
 	batch.Write()
 	return nil
