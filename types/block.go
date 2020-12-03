@@ -9,17 +9,9 @@ type Block struct {
 	Transactions []*Tx
 }
 
-func NewBlock(prev *Block, Txs []*Tx) *Block {
-	b := &Block{
-		BlockHeader:  *prev.Copy(),
-		Transactions: Txs,
-	}
-	return b
-}
-
-func GenesisBlock() *Block {
+func GetGenesisBlock() *Block {
 	return &Block{
-		BlockHeader:  *GenesisHeader(),
+		BlockHeader:  *GetGenesisHeader(),
 		Transactions: []*Tx{},
 	}
 }

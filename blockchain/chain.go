@@ -4,27 +4,99 @@ import (
 	bm "github.com/reed/blockchain/blockmanager"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/blockchain/txpool"
+	"github.com/reed/errors"
+	"github.com/reed/log"
+	"github.com/reed/types"
+	"github.com/sirupsen/logrus"
 )
 
 type Chain struct {
-	Store        store.Store
-	Txpool       *txpool.Txpool
-	BlockManager *bm.BlockManager
+	Store            *store.Store
+	Txpool           *txpool.Txpool
+	BlockManager     *bm.BlockManager
+	blockReceptionCh chan *types.RecvWrap
+	breakWorkCh      chan struct{}
+	isOpen           bool
 }
 
-func NewChain(s store.Store) (*Chain, error) {
-	tp := txpool.NewTxpool(&s)
-	highestBlock, err := s.GetHighestBlock()
+var (
+	openChainErr = errors.New("open chain error")
+)
+
+func NewChain(s *store.Store) (*Chain, error) {
+	tp := txpool.NewTxpool(s)
+	highestBlock, err := (*s).GetHighestBlock()
 	if err != nil {
 		return nil, err
 	}
-	blockMgr, err := bm.NewBlockManager(&s, highestBlock)
+
+	recvCh := make(chan *types.RecvWrap, 100)
+	bwCh := make(chan struct{})
+
+	blockMgr, err := bm.NewBlockManager(s, highestBlock, recvCh)
 	if err != nil {
 		return nil, err
 	}
-	return &Chain{
-		Store:        s,
-		Txpool:       tp,
-		BlockManager: blockMgr,
-	}, nil
+
+	c := &Chain{
+		Store:            s,
+		Txpool:           tp,
+		BlockManager:     blockMgr,
+		blockReceptionCh: recvCh,
+		breakWorkCh:      bwCh,
+	}
+	return c, nil
+}
+
+func (c *Chain) Open() error {
+	if c.isOpen {
+		return errors.Wrap(openChainErr, "There is already an open channel.")
+	}
+	go receiveBlock(c, c.blockReceptionCh, c.breakWorkCh)
+	log.Logger.Info("Chain is open.")
+	return nil
+}
+
+func (c *Chain) Close() {
+	c.isOpen = false
+	close(c.blockReceptionCh)
+	log.Logger.Info("Chain is close.")
+
+}
+
+func (c *Chain) GetReadBreakWorkChan() <-chan struct{} {
+	return c.breakWorkCh
+}
+
+func (c *Chain) GetWriteReceptionChan() chan<- *types.RecvWrap {
+	return c.blockReceptionCh
+}
+
+// save new block and broadcast
+func (c *Chain) ProcessNewBlock(block *types.Block) error {
+	//TODO validate block
+	exists, err := c.BlockManager.AddNewBlock(block)
+	if exists {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	//TODO broadcast new blockmanager
+	return nil
+}
+
+func receiveBlock(chain *Chain, receptionCh <-chan *types.RecvWrap, stopWorkCh chan<- struct{}) {
+	for item := range receptionCh {
+		block := item.Block
+		log.Logger.WithFields(logrus.Fields{"height": block.Height, "hash": block.GetHash().ToString(), "SendBreakWork": item.SendBreakWork}).Info("receive a new block")
+		if err := chain.ProcessNewBlock(block); err != nil {
+			log.Logger.Error(err)
+		} else {
+			if item.SendBreakWork {
+				stopWorkCh <- struct{}{}
+			}
+		}
+	}
+	log.Logger.Info("receiveBlock is stop.")
 }
