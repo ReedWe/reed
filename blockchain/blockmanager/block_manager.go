@@ -7,7 +7,6 @@ package blockmanager
 import (
 	"fmt"
 	"github.com/reed/blockchain/store"
-	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
 	"sync"
@@ -24,25 +23,25 @@ import (
 //	m:main
 
 type BlockManager struct {
-	store      *store.Store
-	blockIndex *BlockIndex
-	errs       map[types.Hash]error
-	mtx        sync.RWMutex
+	store            *store.Store
+	blockIndex       *BlockIndex
+	highestBlock     *types.Block
+	errs             map[types.Hash]error
+	blockReceptionCh chan<- *types.RecvWrap
+	mtx              sync.RWMutex
 }
 
-var (
-	addNewBlockErr = errors.New("add new block error")
-)
-
-func NewBlockManager(s *store.Store, highestBlock *types.Block) (*BlockManager, error) {
+func NewBlockManager(s *store.Store, highestBlock *types.Block, rCh chan<- *types.RecvWrap) (*BlockManager, error) {
 	index, err := NewBlockIndex(s, highestBlock)
 	if err != nil {
 		return nil, err
 	}
 
 	return &BlockManager{
-		store:      s,
-		blockIndex: index,
+		store:            s,
+		blockIndex:       index,
+		highestBlock:     highestBlock,
+		blockReceptionCh: rCh,
 	}, nil
 
 }
@@ -60,24 +59,24 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 		return true, nil
 	}
 
-	highest, err := bm.HighestBlock()
-	if err != nil {
-		return false, err
-	}
-	if block.PrevBlockHash == highest.GetHash() {
+	if block.PrevBlockHash == types.GenesisParentHash() || block.PrevBlockHash == bm.highestBlock.GetHash() {
 		amRollbackFn := bm.blockIndex.addMain(block)
 		aiRollbackFn := bm.blockIndex.addIndex(block)
-		if err := (*bm.store).SaveBlockAndUpdateHighest(block); err != nil {
+		if err := (*bm.store).SaveBlock(block); err != nil {
 			bm.errs[blockHash] = err
 			amRollbackFn()
 			aiRollbackFn()
 			return false, err
 		}
+		bm.highestBlock = block
 	} else {
+		// TODO reorganize not complete
 		bm.blockIndex.addIndex(block)
-		if block.Height > highest.Height && block.BigNumber.Cmp(&highest.BigNumber) == 1 {
-			log.Logger.Infof("ready to reorganize...")
-			bm.reorganize(block)
+		if block.Height > bm.highestBlock.Height && block.BigNumber.Cmp(&bm.highestBlock.BigNumber) == 1 {
+			log.Logger.Infof("ready to reorganize")
+			if err := bm.reorganize(block); err != nil {
+				return false, err
+			}
 		}
 	}
 	return false, nil
@@ -89,7 +88,12 @@ func (bm *BlockManager) reorganize(block *types.Block) error {
 		return err
 	}
 
+	//TODO remember set highestBlock
+	//bm.highestBlock =
 	fmt.Println(reserves, discards)
+
+	//TODO SendBreakWork maybe false: block == newHighestBlock
+	//bm.blockReceptionCh <- &types.RecvWrap{Block: block, SendBreakWork: true}
 	return nil
 }
 
@@ -127,23 +131,18 @@ func (bm *BlockManager) calcFork(block *types.Block, highestBlock *types.Block) 
 	}
 
 	if subPoint.PrevBlockHash != mainPoint.PrevBlockHash {
-		log.Logger.Infof("sub chain longer but are orphans")
-		//subs are Orphans
+		log.Logger.Infof("sub chain longer but are orphans,waiting for parent.")
 		return nil, nil, nil
 	}
 	return reserves, discards, nil
-}
-
-func (bm *BlockManager) HighestBlock() (*types.Block, error) {
-	block, err := (*bm.store).GetHighestBlock()
-	if err != nil {
-		return nil, err
-	}
-	return block, nil
 }
 
 func (bm *BlockManager) GetAncestor(height uint64) *types.Block {
 	bm.mtx.RLock()
 	defer bm.mtx.RUnlock()
 	return bm.blockIndex.main[height]
+}
+
+func (bm *BlockManager) HighestBlock() *types.Block {
+	return bm.highestBlock
 }

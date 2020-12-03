@@ -40,7 +40,7 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 	}
 
 	blockHash := highestBlock.GetHash()
-	for {
+	for blockHash != types.GenesisParentHash() {
 		block, err := (*s).GetBlock(blockHash.Bytes())
 		if err != nil {
 			return nil, err
@@ -48,7 +48,7 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 		bi.main[block.Height] = block
 		bi.index[blockHash] = block
 
-		if block.GetHash() == types.GenesisBlockHash() {
+		if block.GetHash() == types.GenesisParentHash() {
 			log.Logger.Info("main chain and index complete.")
 			break
 		}
@@ -61,11 +61,11 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 func (bi *BlockIndex) exists(block *types.Block) bool {
 	blockHash := block.GetHash()
 	if _, ok := bi.index[blockHash]; ok {
-		log.Logger.Infof("bock(hash=%x) exists in index map", blockHash)
+		log.Logger.Infof("block(hash=%x) exists in index map", blockHash)
 		return true
 	}
 	if bi.main[block.Height] != nil {
-		log.Logger.Infof("bock(hash=%x height=%d) exists in main chain", blockHash, block.Height)
+		log.Logger.Infof("block(hash=%x height=%d) exists in main chain", blockHash, block.Height)
 		return true
 	}
 	return false

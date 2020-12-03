@@ -1,10 +1,15 @@
 package types
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/hex"
+)
 
 const (
 	HashLength = 32
 )
+
+
 
 type Hash [HashLength]byte
 
@@ -14,7 +19,7 @@ func BytesToHash(b []byte) Hash {
 	return h
 }
 
-func GenesisBlockHash() Hash {
+func GenesisParentHash() Hash {
 	return Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 }
 
@@ -30,6 +35,10 @@ func (h *Hash) SetBytes(b []byte) {
 
 // Bytes gets the byte representation of the underlying hash.
 func (h Hash) Bytes() []byte { return h[:] }
+
+func (h Hash) ToString() string {
+	return hex.EncodeToString(h.Bytes())
+}
 
 func (h Hash) HashEqual(b Hash) bool {
 	return bytes.Equal(h.Bytes(), b.Bytes())

@@ -42,15 +42,15 @@ func (bh *BlockHeader) Copy() *BlockHeader {
 		PrevBlockHash: bh.GetHash(),
 		Timestamp:     uint64(time.Now().Unix()),
 		Nonce:         0,
-		BigNumber:     *new(big.Int),
+		BigNumber:     *big.NewInt(0),
 		Version:       10000,
 	}
 }
 
-func GenesisHeader() *BlockHeader {
+func GetGenesisHeader() *BlockHeader {
 	return &BlockHeader{
-		Height:        0,
-		PrevBlockHash: GenesisBlockHash(),
+		Height:        1,
+		PrevBlockHash: GenesisParentHash(),
 		Timestamp:     uint64(time.Now().Unix()),
 		Nonce:         0,
 		BigNumber:     *new(big.Int),
