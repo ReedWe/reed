@@ -1,9 +1,8 @@
 package command
 
 import (
-	"fmt"
+	"github.com/reed/errors"
 	"github.com/spf13/cobra"
-	"github.com/reed/log"
 )
 
 var (
@@ -22,16 +21,14 @@ func Execute() {
 
 func init() {
 	runCmd.Flags().StringVarP(&name, "name", "n", name, "set node name")
-
 }
 
 func RunNode(cmd *cobra.Command, args []string) error {
 	n := NewNode()
 
 	if err := n.Start(); err != nil {
-		return fmt.Errorf("Failed to start node: %v", err)
+		return errors.Wrapf(err, "Failed to start node")
 	}
-	log.Logger.Info("node start...")
 
 	n.RunFover()
 	return nil
