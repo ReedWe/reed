@@ -14,9 +14,9 @@ var (
 )
 
 const (
-	txPrefix     = "TX:"
-	utxoPrefix   = "UTXO:"
-	blockPrefix  = "BLOCK:"
+	txpoolPrefix = "TP:"
+	utxoPrefix   = "U:"
+	blockPrefix  = "B:"
 	highestBlock = "HIGHESTBLOCK"
 )
 
@@ -29,34 +29,34 @@ func NewStore(db dbm.DB) *Store {
 		db: db,
 	}
 }
-
-func (store *Store) SaveTx(tx *types.Tx) error {
-	b, err := json.Marshal(tx)
-	if err != nil {
-		return errors.Wrapf(storeTxErr, "SaveTx json marshal error")
-	}
-
-	store.db.Set(getKey(txPrefix, tx.ID.Bytes()), b)
-	return nil
-}
-
-func (store *Store) GetTx(id []byte) (*types.Tx, error) {
-	b := store.db.Get(getKey(txPrefix, id))
-	if b == nil {
-		return nil, nil
-	}
-	tx := &types.Tx{}
-
-	if err := json.Unmarshal(b, tx); err != nil {
-		return nil, errors.Wrapf(storeTxErr, "tx(id=%x) unmarshal failed", id)
-	}
-	return tx, nil
-}
+//
+//func (store *Store) SaveTx(tx *types.Tx) error {
+//	b, err := json.Marshal(tx)
+//	if err != nil {
+//		return errors.Wrapf(storeTxErr, "SaveTx json marshal error (id=%x)", tx.ID)
+//	}
+//
+//	store.db.Set(getKey(txPrefix, tx.ID.Bytes()), b)
+//	return nil
+//}
+//
+//func (store *Store) GetTx(id []byte) (*types.Tx, error) {
+//	b := store.db.Get(getKey(txPrefix, id))
+//	if b == nil {
+//		return nil, nil
+//	}
+//	tx := &types.Tx{}
+//
+//	if err := json.Unmarshal(b, tx); err != nil {
+//		return nil, errors.Wrapf(storeTxErr, "transaction unmarshal failed (id=%x)", id)
+//	}
+//	return tx, nil
+//}
 
 func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	data := store.db.Get(getKey(utxoPrefix, id))
 	if data == nil {
-		return nil, errors.Wrapf(storeUtxoErr, "utxo(id=%x) does not exists", id)
+		return nil, errors.Wrapf(storeUtxoErr, "utxo does not exists (id=%x)", id)
 	}
 
 	utxo := &types.UTXO{}
@@ -76,7 +76,7 @@ func (store *Store) SaveUtxos(expiredUtxoIds []*types.Hash, utxos []*types.UTXO)
 	for _, utxo := range utxos {
 		b, err := json.Marshal(utxo)
 		if err != nil {
-			return errors.Wrapf(storeUtxoErr, "SaveUtxos(ID=%x) json marshal error", utxo.ID)
+			return errors.Wrapf(storeUtxoErr, "SaveUtxos json marshal error (ID=%x)", utxo.ID)
 		}
 		batch.Set(getKey(utxoPrefix, utxo.ID.Bytes()), b)
 	}
@@ -100,19 +100,19 @@ func (store *Store) GetHighestBlock() (*types.Block, error) {
 func (store *Store) GetBlock(hash []byte) (*types.Block, error) {
 	data := store.db.Get(getKey(blockPrefix, hash))
 	if data == nil {
-		return nil, errors.Wrapf(storeBlockErr, "Block(hash=%x) does not exists", hash)
+		return nil, errors.Wrapf(storeBlockErr, "Block does not exists (hash=%x)", hash)
 	}
 	block := &types.Block{}
 	if err := json.Unmarshal(data, &block); err != nil {
-		return nil, errors.Wrapf(err, "GetBlock(hash=%x) json umarshal error", hash)
+		return nil, errors.Wrapf(err, "GetBlock json umarshal error (hash=%x)", hash)
 	}
 	return block, nil
 }
 
-func (store *Store) SaveBlockAndUpdateHighest(block *types.Block) error {
+func (store *Store) SaveBlock(block *types.Block) error {
 	b, err := json.Marshal(block)
 	if err != nil {
-		return errors.Wrapf(storeBlockErr, "SaveBlock(hash=%x) json marshal error", block.GetHash())
+		return errors.Wrapf(storeBlockErr, "SaveBlock json marshal error (hash=%x)", block.GetHash())
 	}
 
 	batch := store.db.NewBatch()

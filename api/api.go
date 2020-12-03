@@ -1,13 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	bc "github.com/reed/blockchain"
-	"github.com/reed/blockchain/tx/txbuilder"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
+	"github.com/reed/wallet"
 	cmn "github.com/tendermint/tmlibs/common"
 	"io/ioutil"
 	"net"
@@ -37,7 +38,7 @@ func NewApi(c *bc.Chain) *API {
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprint(writer, "Welcome to Reed chain!")
 	})
-	mux.HandleFunc("/sumbit-transaction", api.SubmitTxHandler)
+	mux.HandleFunc("/send", api.SubmitTxHandler)
 
 	httpServer := &http.Server{
 		Addr:    mainURL,
@@ -88,19 +89,45 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 		PrintErrorRes(writer, err)
 		return
 	} else {
-		m := &types.SubmitTxRequest{}
-		err := json.Unmarshal(data, m)
-		if err != nil {
-			PrintErrorRes(writer, err)
-			return
+		if bytes.Equal(data, []byte("block")) {
+			PrintSuccessRes(writer, "args is 'block'")
+			ch := a.Chain.GetWriteReceptionChan()
+
+			s := a.Chain.Store
+			pre, _ := (*s).GetHighestBlock()
+
+			newBlock := &types.Block{
+				BlockHeader:  *pre.Copy(),
+				Transactions: []*types.Tx{},
+			}
+
+			w, _ := wallet.My("123")
+			cbTx, _ := types.NewCoinbaseTx(newBlock.Height, w.Pub, bc.CalcCoinbaseAmt(newBlock.Height))
+			var txs []*types.Tx
+			txs = append(txs, cbTx)
+			newBlock.Transactions = txs
+
+			fmt.Println("send new block...")
+			ch <- &types.RecvWrap{Block: newBlock, SendBreakWork: true}
+		} else if bytes.Equal(data, []byte("h")) {
+			s := a.Chain.Store
+			highest, _ := (*s).GetHighestBlock()
+			PrintSuccessRes(writer, highest.Height)
 		}
-		txResponse, err := txbuilder.SubmitTx(a.Chain, m)
-		if err != nil {
-			log.Logger.Error(err.Error())
-			PrintErrorRes(writer, err.Error())
-			return
-		}
-		PrintSuccessRes(writer, txResponse)
+
+		//m := &types.SubmitTxRequest{}
+		//err := json.Unmarshal(data, m)
+		//if err != nil {
+		//	PrintErrorRes(writer, err)
+		//	return
+		//}
+		//txResponse, err := txbuilder.SubmitTx(a.Chain, m)
+		//if err != nil {
+		//	log.Logger.Error(err.Error())
+		//	PrintErrorRes(writer, err.Error())
+		//	return
+		//}
+		//PrintSuccessRes(writer, txResponse)
 	}
 }
 

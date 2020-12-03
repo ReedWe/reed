@@ -6,13 +6,12 @@ package pow
 
 import (
 	"encoding/hex"
-	"fmt"
 	"github.com/reed/types"
 	"math/big"
 )
 
 const (
-	diffLimitHex = "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	diffLimitHex = "000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	//diffLimitHex   = "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	targetTimespan = 14 * 24 * 60 * 60 // two weeks
 	targetSpacing  = 10 * 60
@@ -28,12 +27,7 @@ func GetNextDifficulty(block *types.Block, getAncestor func(height uint64) *type
 
 func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 	var hashIntVal big.Int
-
 	hashIntVal.SetBytes(hash.Bytes())
-
-	fmt.Printf("hash %x\n", hash)
-	fmt.Printf("target %v\n", target)
-
 	return hashIntVal.Cmp(&target) == -1
 }
 
