@@ -203,7 +203,7 @@ func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
 	newBlock.Transactions = txs
 
 	//recalculate difficulty
-	newBlock.BigNumber = pow.GetNextDifficulty(newBlock, m.chain.BlockManager.GetAncestor)
+	newBlock.BigNumber = pow.GetDifficulty(newBlock, m.chain.BlockManager.GetAncestor)
 	return newBlock, nil
 }
 

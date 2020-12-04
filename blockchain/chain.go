@@ -4,6 +4,7 @@ import (
 	bm "github.com/reed/blockchain/blockmanager"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/blockchain/txpool"
+	"github.com/reed/blockchain/validation"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
@@ -74,7 +75,9 @@ func (c *Chain) GetWriteReceptionChan() chan<- *types.RecvWrap {
 
 // save new block and broadcast
 func (c *Chain) ProcessNewBlock(block *types.Block) error {
-	//TODO validate block
+	if err := validation.ValidateBlockHeader(block, c.BlockManager.HighestBlock(), c.BlockManager); err != nil {
+		return err
+	}
 	exists, err := c.BlockManager.AddNewBlock(block)
 	if exists {
 		return nil

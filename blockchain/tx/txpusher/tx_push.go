@@ -21,7 +21,7 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	log.Logger.Infof("receive a new transaction ID=%x", tx.ID)
 
 	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
-		return blockchain.GetUtxoByOutputId(&chain.Store, spendOutputId)
+		return blockchain.GetUtxoByOutputId(chain.Store, spendOutputId)
 	}
 	if err := tx.Completion(getUtxo); err != nil {
 		return err
@@ -54,7 +54,7 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	// TODO NOT HERE
 	//output utxo and save changed
 	utxos := blockchain.OutputsToUtxos(&tx.ID, tx.TxOutput)
-	if err = blockchain.UtxoChange(&chain.Store, tx.TxInput, utxos); err != nil {
+	if err = blockchain.UtxoChange(chain.Store, tx.TxInput, utxos); err != nil {
 		return err
 	}
 
