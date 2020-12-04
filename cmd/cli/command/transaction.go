@@ -1,11 +1,7 @@
 package command
 
 import (
-	"github.com/reed/blockchain/store"
-	"github.com/reed/database/leveldb"
 	"github.com/spf13/cobra"
-	dbm "github.com/tendermint/tmlibs/db"
-	"os"
 )
 
 var (
@@ -32,8 +28,4 @@ func AddTransaction(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		return
 	}
-}
-
-func getStore() store.Store {
-	return leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/reed/database/file/"))
 }

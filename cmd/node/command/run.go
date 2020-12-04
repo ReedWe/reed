@@ -8,7 +8,7 @@ import (
 var (
 	runCmd = &cobra.Command{
 		Use:   "node",
-		Short: "run the tinychain node",
+		Short: "run the reed node",
 		RunE:  RunNode,
 	}
 
@@ -30,6 +30,6 @@ func RunNode(cmd *cobra.Command, args []string) error {
 		return errors.Wrapf(err, "Failed to start node")
 	}
 
-	n.RunFover()
+	n.RunForever()
 	return nil
 }
