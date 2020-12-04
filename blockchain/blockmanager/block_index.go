@@ -40,7 +40,7 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 	}
 
 	blockHash := highestBlock.GetHash()
-	for blockHash != types.GenesisParentHash() {
+	for blockHash != types.DefHash() {
 		block, err := (*s).GetBlock(blockHash.Bytes())
 		if err != nil {
 			return nil, err
@@ -48,7 +48,7 @@ func NewBlockIndex(s *store.Store, highestBlock *types.Block) (*BlockIndex, erro
 		bi.main[block.Height] = block
 		bi.index[blockHash] = block
 
-		if block.GetHash() == types.GenesisParentHash() {
+		if block.GetHash() == types.DefHash() {
 			log.Logger.Info("main chain and index complete.")
 			break
 		}

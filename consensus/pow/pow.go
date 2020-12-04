@@ -17,12 +17,12 @@ const (
 	targetSpacing  = 10 * 60
 )
 
-func GetNextDifficulty(block *types.Block, getAncestor func(height uint64) *types.Block) big.Int {
+func GetDifficulty(block *types.Block, getAncestor func(height uint64) *types.Block) big.Int {
 	if block.Height == 1 || block.Height%DifficultyAdjustmentInterval() != 1 {
 		return block.BigNumber
 	}
 	ancestor := getAncestor(block.Height - DifficultyAdjustmentInterval())
-	return CalcNextDifficulty(ancestor.Timestamp, block)
+	return CalcDifficulty(ancestor.Timestamp, block)
 }
 
 func CheckProofOfWork(target big.Int, hash types.Hash) bool {
@@ -32,9 +32,9 @@ func CheckProofOfWork(target big.Int, hash types.Hash) bool {
 }
 
 //	Calculate a new difficulty
-//	p:prev blockmanager
-func CalcNextDifficulty(prevEpochBlockTime uint64, p *types.Block) big.Int {
-	actualTimespan := p.Timestamp - prevEpochBlockTime
+//	b:cur block
+func CalcDifficulty(prevEpochBlockTime uint64, b *types.Block) big.Int {
+	actualTimespan := b.Timestamp - prevEpochBlockTime
 
 	if actualTimespan < targetTimespan/4 {
 		actualTimespan = targetTimespan / 4
@@ -45,7 +45,7 @@ func CalcNextDifficulty(prevEpochBlockTime uint64, p *types.Block) big.Int {
 
 	var newDiff big.Int
 
-	newDiff.Mul(&p.BigNumber, new(big.Int).SetUint64(actualTimespan))
+	newDiff.Mul(&b.BigNumber, new(big.Int).SetUint64(actualTimespan))
 	newDiff.Div(&newDiff, new(big.Int).SetUint64(targetTimespan))
 
 	diffLimit := DifficultyLimit()

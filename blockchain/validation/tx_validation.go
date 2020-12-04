@@ -17,11 +17,11 @@ var (
 func ValidateTx(tx *types.Tx) error {
 	log.Logger.Infof("ValidateTx %v", *tx)
 
-	if err := validateInput(&tx.TxInput, tx.ID); err != nil {
+	if err := validateInput(tx.TxInput, tx.GetID()); err != nil {
 		return err
 	}
 
-	if err := validateOutput(&tx.TxOutput); err != nil {
+	if err := validateOutput(tx.TxOutput); err != nil {
 		return err
 	}
 
@@ -32,13 +32,13 @@ func ValidateTx(tx *types.Tx) error {
 	return nil
 }
 
-func validateInput(inputs *[]types.TxInput, txId types.Hash) error {
-	if len(*inputs) == 0 {
+func validateInput(inputs []*types.TxInput, txId types.Hash) error {
+	if len(inputs) == 0 {
 		return errors.Wrapf(validationInputErr, "input data empty")
 	}
 
 	spendOutputMap := map[string]*types.TxInput{}
-	for _, input := range *inputs {
+	for _, input := range inputs {
 
 		key := string(input.SoureId.Bytes()) + string(input.SourcePos)
 		if _, ok := spendOutputMap[key]; ok {
@@ -64,12 +64,12 @@ func validateInput(inputs *[]types.TxInput, txId types.Hash) error {
 	return nil
 }
 
-func validateOutput(outputs *[]types.TxOutput) error {
-	if len(*outputs) == 0 {
+func validateOutput(outputs []*types.TxOutput) error {
+	if len(outputs) == 0 {
 		return errors.Wrapf(validationOutputErr, "output data empty")
 	}
 
-	for _, output := range *outputs {
+	for _, output := range outputs {
 		if output.IsCoinBase {
 			return errors.Wrapf(validationOutputErr, "not coinbase output %x", output.ID)
 		}

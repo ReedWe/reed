@@ -18,7 +18,7 @@ func TestCalcNextDifficulty(t *testing.T) {
 	p.Timestamp = 1606458831
 	p.BigNumber = oldDiff
 
-	diff := CalcNextDifficulty(1605249231, p)
+	diff := CalcDifficulty(1605249231, p)
 
 	if diff.Cmp(&oldDiff) == -1 {
 		fmt.Println("YES")

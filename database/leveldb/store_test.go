@@ -4,15 +4,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/reed/types"
+	dbm "github.com/tendermint/tmlibs/db"
 	"os"
 	"testing"
 )
 
 func TestSaveTx(t *testing.T) {
-	txId, _ := hex.DecodeString("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532")
-	inputs := make([]types.TxInput,0)
+	inputs := make([]*types.TxInput, 0)
 
 	inpId, _ := hex.DecodeString("f5cb9eb86f0ee72f00f88c769ca2cb9b635072edb2427ccf1bcf751d788c43ab")
 	spoutId, _ := hex.DecodeString("8298e85d0e8465187310a24df198cd844e4cec6e1c146a1e23639def8c91bfe8")
@@ -28,7 +27,7 @@ func TestSaveTx(t *testing.T) {
 		ScriptPk:      scriptPk,
 	}
 
-	input := types.TxInput{
+	input := &types.TxInput{
 		ID:        types.BytesToHash(inpId),
 		Spend:     spend,
 		ScriptSig: scriptSig,
@@ -38,12 +37,12 @@ func TestSaveTx(t *testing.T) {
 
 	//=============== OUT PUT ===============
 
-	outputs := make([]types.TxOutput, 0)
+	outputs := make([]*types.TxOutput, 0)
 
 	outId, _ := hex.DecodeString("4eaa97d3fb3e5659bc4f9c805a1ae747c69a39b57b77cb5b87addb060abdd623")
 	outAddr, _ := hex.DecodeString("d75999e54ad60ac7d01c1f7d1fc6339daf43907ba7cd817a0cf28c0a36e68acc")
 	outScriptPK, _ := hex.DecodeString("b4af5bb2bb1fb9086d2cac65a667f1810dfb0ddd904f2edc947227271fdcaba5b12049d709358dc427433050625aa2135163181ccc320f22859d7c065ecc9dcb")
-	output := types.TxOutput{
+	output := &types.TxOutput{
 		ID:         types.BytesToHash(outId),
 		IsCoinBase: false,
 		Amount:     15,
@@ -53,7 +52,6 @@ func TestSaveTx(t *testing.T) {
 	outputs = append(outputs, output)
 
 	tx := &types.Tx{
-		ID:       types.BytesToHash(txId),
 		TxInput:  inputs,
 		TxOutput: outputs,
 	}
@@ -73,6 +71,6 @@ func TestSaveTx(t *testing.T) {
 		t.Errorf("Unmarshal error %s", err.Error())
 	}
 
-	fmt.Printf("%x",tx2.TxInput[0].ScriptPk)
+	fmt.Printf("%x", tx2.TxInput[0].ScriptPk)
 
 }

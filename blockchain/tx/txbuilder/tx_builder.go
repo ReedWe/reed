@@ -47,22 +47,16 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	}
 
 	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
-		return blockchain.GetUtxoByOutputId(&chain.Store, spendOutputId)
+		return blockchain.GetUtxoByOutputId(chain.Store, spendOutputId)
 	}
 	if err = tx.Completion(getUtxo); err != nil {
 		return nil, err
 	}
 
-	//tx ID
-	txId, err := tx.GenerateID()
-	if err != nil {
-		return nil, err
-	}
-	tx.ID = *txId
-
+	txId := tx.GetID()
 	//ScriptSig
 	for _, input := range tx.TxInput {
-		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
+		scriptSig, err := input.GenerateScriptSig(wt, &txId)
 		if err != nil {
 			return nil, err
 		}
