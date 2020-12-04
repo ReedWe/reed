@@ -67,9 +67,9 @@ func (store *Store) GetUtxo(id []byte) (*types.UTXO, error) {
 	return utxo, nil
 }
 
-func (store *Store) SaveUtxos(expiredUtxoIds []*types.Hash, utxos []*types.UTXO) error {
+func (store *Store) SaveUtxos(usedUtxoIDs []*types.Hash, utxos []*types.UTXO) error {
 	batch := store.db.NewBatch()
-	for _, e := range expiredUtxoIds {
+	for _, e := range usedUtxoIDs {
 		batch.Delete(e.Bytes())
 	}
 

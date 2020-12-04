@@ -18,7 +18,7 @@ var (
 
 // receive local transaction and remote transaction
 func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
-	log.Logger.Infof("receive a new transaction ID=%x", tx.ID)
+	log.Logger.Infof("receive a new transaction ID=%x", tx.GetID())
 
 	getUtxo := func(spendOutputId types.Hash) (*types.UTXO, error) {
 		return blockchain.GetUtxoByOutputId(chain.Store, spendOutputId)
@@ -27,16 +27,9 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
-	//generate txID and validate
-	txId, err := tx.GenerateID()
-	if !txId.HashEqual(tx.ID) {
-		return errors.Wrapf(recvTxErr, "txId errors. local=%x remote=%x", txId, tx.ID)
-	}
-
-	existTx := chain.Txpool.GetTx(tx.ID)
-
+	existTx := chain.Txpool.GetTx(tx.GetID())
 	if existTx != nil {
-		log.Logger.Infof("transaction exists already (id=%x)", tx.ID)
+		log.Logger.Infof("transaction exists already (id=%x)", tx.GetID())
 		return nil
 	}
 
@@ -45,18 +38,10 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 	}
 
 	//push into tx pool
-	if err = chain.Txpool.AddTx(tx); err != nil {
+	if err := chain.Txpool.AddTx(tx); err != nil {
 		return err
 	}
 
 	//TODO broadcast this transaction
-
-	// TODO NOT HERE
-	//output utxo and save changed
-	utxos := blockchain.OutputsToUtxos(&tx.ID, tx.TxOutput)
-	if err = blockchain.UtxoChange(chain.Store, tx.TxInput, utxos); err != nil {
-		return err
-	}
-
 	return nil
 }

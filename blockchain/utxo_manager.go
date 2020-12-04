@@ -10,6 +10,18 @@ import (
 	"github.com/reed/types"
 )
 
+func ProcessUtxoForSaveBlock(store *store.Store, b *types.Block) error {
+	var utxos []*types.UTXO
+	var usedUtxoIDs []*types.Hash
+
+	for _, tx := range b.Transactions {
+		txID := tx.GetID()
+		utxos = append(utxos, OutputsToUtxos(&txID, tx.TxOutput)...)
+		usedUtxoIDs = append(usedUtxoIDs, InputsToUtxoIDs(tx.TxInput)...)
+	}
+	return UtxoChange(store, usedUtxoIDs, utxos)
+}
+
 func GetUtxoByOutputId(store *store.Store, outputId types.Hash) (*types.UTXO, error) {
 	id := outputId.Bytes()
 	utxo, err := (*store).GetUtxo(id)
@@ -29,11 +41,14 @@ func OutputsToUtxos(txId *types.Hash, outputs []*types.TxOutput) []*types.UTXO {
 	return utxos
 }
 
-func UtxoChange(store *store.Store, inputs []*types.TxInput, utxos []*types.UTXO) error {
-	var expiredUtxoIds []*types.Hash
+func InputsToUtxoIDs(inputs []*types.TxInput) []*types.Hash {
+	var IDs []*types.Hash
 	for _, input := range inputs {
-		expiredUtxoIds = append(expiredUtxoIds, &input.SpendOutputId)
+		IDs = append(IDs, &input.SpendOutputId)
 	}
+	return IDs
+}
 
-	return (*store).SaveUtxos(expiredUtxoIds, utxos)
+func UtxoChange(store *store.Store, usedUtxoIDs []*types.Hash, utxos []*types.UTXO) error {
+	return (*store).SaveUtxos(usedUtxoIDs, utxos)
 }
