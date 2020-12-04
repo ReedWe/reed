@@ -9,8 +9,6 @@ const (
 	HashLength = 32
 )
 
-
-
 type Hash [HashLength]byte
 
 func BytesToHash(b []byte) Hash {
@@ -19,8 +17,8 @@ func BytesToHash(b []byte) Hash {
 	return h
 }
 
-func GenesisParentHash() Hash {
-	return Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+func DefHash() Hash {
+	return BytesToHash([]byte{0})
 }
 
 // SetBytes sets the hash to the value of b.

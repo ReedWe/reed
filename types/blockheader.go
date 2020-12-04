@@ -50,7 +50,7 @@ func (bh *BlockHeader) Copy() *BlockHeader {
 func GetGenesisHeader() *BlockHeader {
 	return &BlockHeader{
 		Height:        1,
-		PrevBlockHash: GenesisParentHash(),
+		PrevBlockHash: DefHash(),
 		Timestamp:     uint64(time.Now().Unix()),
 		Nonce:         0,
 		BigNumber:     *new(big.Int),
