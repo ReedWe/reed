@@ -1,8 +1,8 @@
 package log
 
 import (
+	"github.com/reed/blockchain/config"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 var Logger *logrus.Logger
@@ -15,7 +15,7 @@ func (ew emptyWriter) Write(p []byte) (int, error) {
 }
 
 func Init() {
-	fileHooker := NewFileRotateHooker(os.Getenv("GOPATH")+"/src/github.com/reed", 60*60*24)
+	fileHooker := NewFileRotateHooker(config.LogDir(), config.Default.LogAge)
 
 	Logger = logrus.New()
 	Logger.Hooks.Add(fileHooker)

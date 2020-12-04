@@ -2,6 +2,7 @@ package blockmanager
 
 import (
 	"fmt"
+	"github.com/reed/blockchain/config"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/crypto"
 	"github.com/reed/database/leveldb"
@@ -9,7 +10,6 @@ import (
 	dbm "github.com/tendermint/tmlibs/db"
 	"math/big"
 	"math/rand"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -139,5 +139,5 @@ func getMockBlock() ([]*types.Block, map[types.Hash]*types.Block, *types.Block, 
 }
 
 func getStore() store.Store {
-	return leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, os.Getenv("GOPATH")+"/src/github.com/reed/database/file/"))
+	return leveldb.NewStore(dbm.NewDB("core", dbm.LevelDBBackend, config.LogDir()))
 }

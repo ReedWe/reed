@@ -1,6 +1,3 @@
-*.log
-tiny
 vendor
 .idea/*
-database/file
 practice_main.go

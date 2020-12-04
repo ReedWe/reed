@@ -7,6 +7,7 @@ package miner
 import (
 	"bytes"
 	bc "github.com/reed/blockchain"
+	"github.com/reed/blockchain/merkle"
 	"github.com/reed/consensus/pow"
 	"github.com/reed/errors"
 	"github.com/reed/log"
@@ -169,7 +170,7 @@ func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
 	//recalculate difficulty
 	newBlock.BigNumber = pow.GetDifficulty(newBlock, m.chain.BlockManager.GetAncestor)
 	//set tx merkle root
-	newBlock.ComputeMerkleRootHash()
+	newBlock.MerkleRootHash = merkle.ComputeMerkleRoot(newBlock.Transactions)
 	return newBlock, nil
 }
 
@@ -178,5 +179,5 @@ func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
 func (m *Miner) incrementExtraNonce(extraNonce uint64, b *types.Block) {
 	b.Transactions[0].TxInput[0].ScriptSig = bytes.Join([][]byte{b.Transactions[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
 	//recompute merkle root
-	b.ComputeMerkleRootHash()
+	b.MerkleRootHash = merkle.ComputeMerkleRoot(b.Transactions)
 }
