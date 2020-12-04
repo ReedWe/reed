@@ -17,7 +17,7 @@ var (
 func ValidateTx(tx *types.Tx) error {
 	log.Logger.Infof("ValidateTx %v", *tx)
 
-	if err := validateInput(tx.TxInput, tx.ID); err != nil {
+	if err := validateInput(tx.TxInput, tx.GetID()); err != nil {
 		return err
 	}
 

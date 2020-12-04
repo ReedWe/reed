@@ -53,16 +53,10 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 		return nil, err
 	}
 
-	//tx ID
-	txId, err := tx.GenerateID()
-	if err != nil {
-		return nil, err
-	}
-	tx.ID = *txId
-
+	txId := tx.GetID()
 	//ScriptSig
 	for _, input := range tx.TxInput {
-		scriptSig, err := input.GenerateScriptSig(wt, &tx.ID)
+		scriptSig, err := input.GenerateScriptSig(wt, &txId)
 		if err != nil {
 			return nil, err
 		}

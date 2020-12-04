@@ -33,10 +33,10 @@ func (tp *Txpool) AddTx(tx *types.Tx) error {
 	tp.mtx.Lock()
 	defer tp.mtx.Unlock()
 
-	if _, ok := tp.Txs[tx.ID]; ok {
-		return errors.Wrapf(addTxErr, "tx exists ID=%x", tx.ID)
+	if _, ok := tp.Txs[tx.GetID()]; ok {
+		return errors.Wrapf(addTxErr, "tx exists ID=%x", tx.GetID())
 	}
-	tp.Txs[tx.ID] = tx
+	tp.Txs[tx.GetID()] = tx
 	return nil
 }
 

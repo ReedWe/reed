@@ -16,17 +16,11 @@ var (
 )
 
 type Tx struct {
-	ID Hash `json:"id"`
-
 	TxInput  []*TxInput  `json:"input"`
 	TxOutput []*TxOutput `json:"output"`
 }
 
-func (tx *Tx) GenerateID() (*Hash, error) {
-	if len(tx.TxInput) == 0 {
-		return nil, errors.New("tx input empty")
-	}
-
+func (tx *Tx) GetID() Hash {
 	var ids [][]byte
 	for _, input := range tx.TxInput {
 		ids = append(ids, input.ID.Bytes())
@@ -35,8 +29,7 @@ func (tx *Tx) GenerateID() (*Hash, error) {
 		ids = append(ids, output.ID.Bytes())
 	}
 
-	h := BytesToHash(crypto.Sha256(ids...))
-	return &h, nil
+	return BytesToHash(crypto.Sha256(ids...))
 }
 
 func (tx *Tx) Completion(getUtxo func(spendOutputId Hash) (*UTXO, error)) error {
@@ -95,11 +88,6 @@ func NewCoinbaseTx(curHeight uint64, coinbaseAddr []byte, amt uint64) (*Tx, erro
 	inps = append(inps, i)
 	iops = append(iops, o)
 	tx := &Tx{TxInput: inps, TxOutput: iops}
-	id, err := tx.GenerateID()
-	if err != nil {
-		return nil, err
-	}
-	tx.ID = *id
 	return tx, nil
 }
 
