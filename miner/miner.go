@@ -105,32 +105,6 @@ func (m *Miner) work() {
 			}
 			log.Logger.Info("mined a block,rebuild a new block complete.")
 		}
-
-		//if stop {
-		//	log.Logger.Info("stop mining")
-		//	break
-		//}
-		//if born {
-		//	// we mint a new block or receive a new block
-		//	log.Logger.WithFields(logrus.Fields{"height": block.Height, "hash": block.GetHash().ToString()}).Info("a new block is added to the chain")
-		//	if err := m.chain.ProcessNewBlock(block); err != nil {
-		//		log.Logger.Error(workErr, err)
-		//		break
-		//	}
-		//	newBlock, err := m.buildBlock(block)
-		//	if err != nil {
-		//		log.Logger.Error(workErr, err)
-		//		break
-		//	}
-		//	block = newBlock
-		//} else {
-		//	// repack highest block after reorganize chan
-		//	block, err = m.fetchBlock()
-		//	if err != nil {
-		//		log.Logger.Fatal(workErr, err)
-		//		break
-		//	}
-		//}
 	}
 }
 
@@ -139,20 +113,10 @@ func (m *Miner) generateBlock(block *types.Block) (repack bool) {
 loop:
 	for {
 		select {
-		//case rblock := <-m.blockReceptionCh:
-		//	log.Logger.Infof("Received a block from remote node.(hash=%x)", rblock.GetHash())
-		//	// receive a new block from remote node
-		//	// block = fetch laest block
-		//	block = rblock
-		//	born = true
-		//	break loop
 		case <-m.breakWorkCh:
 			log.Logger.Info("Received a break single,stop mining.")
 			repack = true
 			break loop
-		//case <-m.reorganizeCh:
-		//	log.Logger.Infof("Received a reorganized single.")
-		//	break
 		default:
 			//just for no block,do nothing
 		}
@@ -204,9 +168,15 @@ func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
 
 	//recalculate difficulty
 	newBlock.BigNumber = pow.GetDifficulty(newBlock, m.chain.BlockManager.GetAncestor)
+	//set tx merkle root
+	newBlock.ComputeMerkleRootHash()
 	return newBlock, nil
 }
 
-func (m *Miner) incrementExtraNonce(extraNonce uint64, cblock *types.Block) {
-	cblock.Transactions[0].TxInput[0].ScriptSig = bytes.Join([][]byte{cblock.Transactions[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
+//when the nonce reaches the maximum value,change the scriptSig value of coinbase transaction
+//and reset:nonce=0
+func (m *Miner) incrementExtraNonce(extraNonce uint64, b *types.Block) {
+	b.Transactions[0].TxInput[0].ScriptSig = bytes.Join([][]byte{b.Transactions[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
+	//recompute merkle root
+	b.ComputeMerkleRootHash()
 }

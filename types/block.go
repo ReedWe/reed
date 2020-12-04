@@ -4,6 +4,8 @@
 
 package types
 
+import "github.com/reed/blockchain/merkle"
+
 type Block struct {
 	BlockHeader
 	Transactions []*Tx
@@ -14,4 +16,8 @@ func GetGenesisBlock() *Block {
 		BlockHeader:  *GetGenesisHeader(),
 		Transactions: []*Tx{},
 	}
+}
+
+func (b *Block) ComputeMerkleRootHash() {
+	b.MerkleRootHash = merkle.ComputeMerkleRoot(b.Transactions)
 }

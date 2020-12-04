@@ -59,7 +59,7 @@ func (bm *BlockManager) AddNewBlock(block *types.Block) (exists bool, err error)
 		return true, nil
 	}
 
-	if block.PrevBlockHash == types.GenesisParentHash() || block.PrevBlockHash == bm.highestBlock.GetHash() {
+	if block.PrevBlockHash == types.DefHash() || block.PrevBlockHash == bm.highestBlock.GetHash() {
 		amRollbackFn := bm.blockIndex.addMain(block)
 		aiRollbackFn := bm.blockIndex.addIndex(block)
 		if err := (*bm.store).SaveBlock(block); err != nil {

@@ -71,7 +71,7 @@ func getMockBlock() ([]*types.Block, map[types.Hash]*types.Block, *types.Block, 
 	//}
 	forkChain := map[types.Hash]*types.Block{}
 
-	prev := types.GenesisParentHash()
+	prev := types.DefHash()
 
 	// common
 	for i := 1; i < 10; i++ {
