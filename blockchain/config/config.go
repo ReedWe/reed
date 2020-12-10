@@ -12,18 +12,25 @@ import (
 )
 
 var Default = Config{
+	Version:      10000,
 	dataBasePath: "database",
 
 	logPath: "log",
 	LogAge:  60 * 60 * 24, //Sec
+
+	Mining: false,
 }
 
 type Config struct {
+	Version      uint64
 	HomeDir      string
 	dataBasePath string
 
 	logPath string
 	LogAge  uint32
+
+	Mining bool
+
 }
 
 func init() {

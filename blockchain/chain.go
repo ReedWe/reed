@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	bm "github.com/reed/blockchain/blockmanager"
+	"github.com/reed/blockchain/config"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/blockchain/txpool"
 	"github.com/reed/blockchain/validation"
@@ -106,7 +107,7 @@ func receiveBlock(chain *Chain, receptionCh <-chan *types.RecvWrap, stopWorkCh c
 		if err := chain.ProcessNewBlock(block); err != nil {
 			log.Logger.WithField("blockHash", block.GetHash().ToString()).Error(err)
 		} else {
-			if item.SendBreakWork {
+			if item.SendBreakWork && config.Default.Mining {
 				stopWorkCh <- struct{}{}
 			}
 		}
