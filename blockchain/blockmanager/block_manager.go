@@ -92,7 +92,7 @@ func (bm *BlockManager) reorganize(block *types.Block) error {
 	//bm.highestBlock =
 	fmt.Println(reserves, discards)
 
-	//TODO SendBreakWork maybe false: block == newHighestBlock
+	//TODO SendBreakWork maybe false: block == newHighestBlock && config.Default.Mining
 	//bm.blockReceptionCh <- &types.RecvWrap{Block: block, SendBreakWork: true}
 	return nil
 }

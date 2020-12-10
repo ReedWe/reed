@@ -55,12 +55,14 @@ func NewNode() *Node {
 
 func (n *Node) OnStart() error {
 	n.api.StartApiServer()
-	//if err := n.chain.Open(); err != nil {
-	//	return err
-	//}
-	//if err := n.miner.Start(); err != nil {
-	//	return err
-	//}
+	if err := n.chain.Open(); err != nil {
+		return err
+	}
+	if config.Default.Mining {
+		if err := n.miner.Start(); err != nil {
+			return err
+		}
+	}
 	log.Logger.Info("Node started successfully.")
 	return nil
 }
@@ -86,10 +88,6 @@ func lockDataDir() (fileutil.Releaser, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "Can not start node")
 	}
-	//if existed {
-	//	return nil, errors.New("Can not start node,please check if another node instance is running.")
-	//}
-
 	return lock, nil
 }
 

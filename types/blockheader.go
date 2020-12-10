@@ -6,6 +6,7 @@ package types
 
 import (
 	"bytes"
+	"github.com/reed/blockchain/config"
 	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/crypto"
 	"math/big"
@@ -43,7 +44,7 @@ func (bh *BlockHeader) Copy() *BlockHeader {
 		Timestamp:     uint64(time.Now().Unix()),
 		Nonce:         0,
 		BigNumber:     *big.NewInt(0),
-		Version:       10000,
+		Version:       config.Default.Version,
 	}
 }
 
@@ -54,6 +55,6 @@ func GetGenesisHeader() *BlockHeader {
 		Timestamp:     uint64(time.Now().Unix()),
 		Nonce:         0,
 		BigNumber:     *new(big.Int),
-		Version:       10000,
+		Version:       config.Default.Version,
 	}
 }
