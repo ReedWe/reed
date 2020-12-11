@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	bc "github.com/reed/blockchain"
+	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
 	"github.com/reed/wallet"
+	cmn "github.com/tendermint/tmlibs/common"
 	"io/ioutil"
+	"net"
 	"net/http"
 )
 
@@ -49,16 +52,17 @@ func NewApi(c *bc.Chain) *API {
 }
 
 func (a *API) StartApiServer() {
-	//listen, err := net.Listen("tcp", "0.0.0.0:9888")
-	//if err != nil {
-	//	cmn.Exit(cmn.Fmt("failed to start api server:%v", err))
-	//}
-	//
-	//go func() {
-	//	if err := a.Server.Serve(listen); err != nil {
-	//		log.Logger.WithField("error", errors.Wrap(err, "server"))
-	//	}
-	//}()
+	listen, err := net.Listen("tcp", ":9888")
+	if err != nil {
+		cmn.Exit(cmn.Fmt("failed to start api server:%v", err))
+	}
+
+	go func() {
+		if err := a.Server.Serve(listen); err != nil {
+			log.Logger.WithField("error", errors.Wrap(err,
+				"server"))
+		}
+	}()
 
 }
 
@@ -110,6 +114,9 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 			s := a.Chain.Store
 			highest, _ := (*s).GetHighestBlock()
 			PrintSuccessRes(writer, highest.Height)
+		}else {
+			PrintSuccessRes(writer, "nothing")
+
 		}
 
 		//m := &types.SubmitTxRequest{}
