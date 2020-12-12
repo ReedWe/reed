@@ -27,9 +27,9 @@ func NewTable() *Table {
 // log2(a^b)
 
 //	k-bucket	distance	description
-//	0			[2^0,2^1)	存放距离为1~2(不含)，且每个Byte前导0的个数为255的节点
-//	1			[2^1,2^2)	存放距离为2~4(不含)，且每个Byte前导0的个数为254的节点
-//	2			[2^2,2^3)	存放距离为4~8(不含)，且每个Byte前导0的个数为253的节点
+//	0			[2^0,2^1)	存放距离为1，且前255bit相同，第256bit开始不同（即前255bit为0）
+//	1			[2^1,2^2)	存放距离为2~3，且前254bit相同，第255bit开始不同
+//	2			[2^2,2^3)	存放距离为4~7，且前253bit相同，第254bit开始不同
 //	...
 //	MEMO:
 //	ID长度为32Byte，256bit。
@@ -48,7 +48,19 @@ func LogarithmDist(a, b types.Hash) int {
 			lz += lzcount[i]
 		}
 	}
+	fmt.Println(lz)
 	return len(a)*8 - lz
+}
+
+func Calc(a, b types.Hash) int {
+	for i := range a {
+		x := a[i] ^ b[i]
+		if x != 0 {
+			lz := i*8 + lzcount[x] //256bit leading zero counts
+			return IDBits - 1 - lz
+		}
+	}
+	return 0
 }
 
 // table of leading zero counts for bytes [0..255]
