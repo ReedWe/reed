@@ -22,6 +22,12 @@ func Uint64ToByte(n uint64) []byte {
 	return buf.Bytes()
 }
 
+func Uint16ToByte(n uint16) []byte {
+	buf := bytes.NewBuffer([]byte{})
+	binary.Write(buf, binary.BigEndian, n)
+	return buf.Bytes()
+}
+
 func BoolToByte(b bool) []byte {
 	byt := []byte{1}
 	if !b {

@@ -4,8 +4,23 @@
 
 package p2p
 
-type Server struct {
-	TCP *TCPListener
-	udp *udpListener
+import "github.com/reed/p2p/discover"
 
+type Server struct {
+	TCP     *TCPListener
+	network *discover.UDP
+}
+
+func NewP2PServer() (*Server, error) {
+	udp, err := discover.NewDiscover()
+	if err != nil {
+		return nil, err
+	}
+	return &Server{
+		network: udp,
+	}, nil
+}
+
+func (s *Server) Start() {
+	s.network.Start()
 }
