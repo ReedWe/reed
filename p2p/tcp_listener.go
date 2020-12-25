@@ -2,16 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-package types
+package p2p
 
-type Block struct {
-	BlockHeader
-	Transactions []*Tx
-}
+type TCPListener struct {
 
-func GetGenesisBlock() *Block {
-	return &Block{
-		BlockHeader:  *GetGenesisHeader(),
-		Transactions: []*Tx{},
-	}
 }

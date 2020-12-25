@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	bm "github.com/reed/blockchain/blockmanager"
+	"github.com/reed/blockchain/config"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/blockchain/txpool"
 	"github.com/reed/blockchain/validation"
@@ -21,7 +22,8 @@ type Chain struct {
 }
 
 var (
-	openChainErr = errors.New("open chain error")
+	openChainErr         = errors.New("chain:open chain error")
+	processBlockChainErr = errors.New("chain:process block error")
 )
 
 func NewChain(s *store.Store) (*Chain, error) {
@@ -85,7 +87,16 @@ func (c *Chain) ProcessNewBlock(block *types.Block) error {
 	if err != nil {
 		return err
 	}
+
 	//TODO broadcast new blockmanager
+
+	if err := ProcessUtxoForSaveBlock(c.Store, block); err != nil {
+		return errors.Wrapf(processBlockChainErr, err.Error())
+	}
+
+	//remove processed transaction in pool
+	c.Txpool.RemoveTransactions(block.Transactions)
+
 	return nil
 }
 
@@ -94,9 +105,9 @@ func receiveBlock(chain *Chain, receptionCh <-chan *types.RecvWrap, stopWorkCh c
 		block := item.Block
 		log.Logger.WithFields(logrus.Fields{"height": block.Height, "hash": block.GetHash().ToString(), "SendBreakWork": item.SendBreakWork}).Info("receive a new block")
 		if err := chain.ProcessNewBlock(block); err != nil {
-			log.Logger.Error(err)
+			log.Logger.WithField("blockHash", block.GetHash().ToString()).Error(err)
 		} else {
-			if item.SendBreakWork {
+			if item.SendBreakWork && config.Default.Mining {
 				stopWorkCh <- struct{}{}
 			}
 		}

@@ -11,7 +11,7 @@ import (
 )
 
 type UTXO struct {
-	ID         Hash   `json:"utxoId"`
+	ID         Hash   `json:"id"`
 	OutputId   Hash   `json:"outputId"`
 	SourceId   Hash   `json:"sourceId"`
 	IsCoinbase bool   `json:"isCoinbase"`

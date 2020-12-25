@@ -12,10 +12,9 @@ import (
 )
 
 type Txpool struct {
-	Txs       map[types.Hash]*types.Tx
-	OutputIds map[types.Hash]*types.TxOutput
-	Store     store.Store
-	mtx       sync.RWMutex
+	Txs   map[types.Hash]*types.Tx
+	Store store.Store
+	mtx   sync.RWMutex
 }
 
 var (
@@ -58,9 +57,11 @@ func (tp *Txpool) GetTxs() []*types.Tx {
 	return txs
 }
 
-func (tp *Txpool) ExistOutput(hash types.Hash) bool {
-	tp.mtx.RLock()
-	defer tp.mtx.RUnlock()
+func (tp *Txpool) RemoveTransactions(txs []*types.Tx) {
+	tp.mtx.Lock()
+	defer tp.mtx.Unlock()
 
-	return tp.OutputIds[hash] != nil
+	for _, tx := range txs {
+		delete(tp.Txs, tx.GetID())
+	}
 }

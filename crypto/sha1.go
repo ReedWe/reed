@@ -2,16 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-package types
+package crypto
 
-type Block struct {
-	BlockHeader
-	Transactions []*Tx
-}
+import (
+	"crypto/sha1"
+)
 
-func GetGenesisBlock() *Block {
-	return &Block{
-		BlockHeader:  *GetGenesisHeader(),
-		Transactions: []*Tx{},
-	}
+func Sha1(data []byte) []byte {
+	d := sha1.New()
+	d.Write(data)
+	return d.Sum(nil)
 }
