@@ -3,6 +3,7 @@ module github.com/reed
 go 1.14
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect

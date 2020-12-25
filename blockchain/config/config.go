@@ -5,6 +5,7 @@
 package config
 
 import (
+	"github.com/BurntSushi/toml"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -12,83 +13,74 @@ import (
 )
 
 var (
-	Default = Config{
-		Version:      10000,
-		dataBasePath: "database2",
-
-		logPath: "log",
-		LogAge:  60 * 60 * 24, //Sec
-
-		Mining: false,
-		//
-		//LocalAddr: "127.0.0.1:30398",
-		//Seeds:     defaultSeed(),
-		//OurID:     "67032b2b262d837fbe2a0608409986c571350689",
-		//LockName:  "LOCK",
-		//APIAddr:   ":9888",
-		//
-		LocalAddr: "127.0.0.1:30399",
-		Seeds:     defaultSeed(),
-		OurID:     "569188e0b7e1abdb9ac700fb97c3a4c3f749b2ea",
-		LockName:  "LOCK2",
-		APIAddr:   ":9889",
-	}
+	Default = &Config{}
 )
 
 type Config struct {
-	Version      uint64
-	HomeDir      string
+	basic
+	node
+	p2p
+}
 
-	dataBasePath string
+type basic struct {
+	Version uint64
+	HomeDir string
 
-	logPath string
+	DataBasePath string
+
+	LogPath string
 	LogAge  uint32
 
 	Mining bool
+}
 
-	//P2P
-	LocalAddr string
-	Seeds     []string
+type node struct {
+	APIAddr string
+}
 
-	OurID    string
+type p2p struct {
+	Seeds string
+
+	OurNode  string
 	LockName string
-	APIAddr  string
 }
 
 func init() {
+	homeDir := ""
 	home := os.Getenv("HOME")
 	if home == "" {
-		if user, err := user.Current(); err == nil {
-			home = user.HomeDir
+		if u, err := user.Current(); err == nil {
+			home = u.HomeDir
 		}
 	}
 	switch runtime.GOOS {
 	case "darwin":
-		Default.HomeDir = filepath.Join(home, "Library", "Reed")
+		homeDir = filepath.Join(home, "Library", "Reed")
 	case "windows":
 		localappdata := os.Getenv("LOCALAPPDATA")
 		if localappdata != "" {
-			Default.HomeDir = filepath.Join(localappdata, "Reed")
+			homeDir = filepath.Join(localappdata, "Reed")
 		} else {
-			Default.HomeDir = filepath.Join(home, "AppData", "Local", "Reed")
+			homeDir = filepath.Join(home, "AppData", "Local", "Reed")
 		}
 	default:
-		Default.HomeDir = filepath.Join(home, ".reed")
+		homeDir = filepath.Join(home, ".reed")
 	}
+
+	GenerateConfigIfNotExist(homeDir)
+
+	if _, err := toml.DecodeFile("config.toml", &Default); err != nil {
+		panic("Failed to decode config toml:" + err.Error())
+	}
+	Default.HomeDir = homeDir
 }
 
 func DatabaseDir() string {
-	return rootify(Default.dataBasePath, Default.HomeDir)
+	return rootify(Default.DataBasePath, Default.HomeDir)
 }
 
 func LogDir() string {
-	return rootify(Default.logPath, Default.HomeDir)
-}
-
-func defaultSeed() []string {
-	var ss []string
-	ss = append(ss, "127.0.0.1:30399")
-	return ss
+	return rootify(Default.LogPath, Default.HomeDir)
 }
 
 // helper function to make config creation independent of root dir

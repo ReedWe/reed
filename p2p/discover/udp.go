@@ -48,7 +48,7 @@ type UDP struct {
 	table         *Table
 	OurNode       *Node
 	timeoutEvents map[timeoutEvent]*time.Timer
-	nodes         map[NodeID]*Node //record all node we known
+	nodes         map[NodeID]*Node //record all nodes we have seen
 	readCh        chan ingressPacket
 	timeoutCh     chan timeoutEvent
 	queryCh       chan findNodeQuery
@@ -471,7 +471,7 @@ func (ns *nodeState) canQuery() bool {
 // header
 // [2]byte	version
 // [1]byte	packetType
-// [20]byte nodeId
+// [20]byte	nodeId
 func packet(e nodeEvent, ourId NodeID, msg interface{}) ([]byte, error) {
 	b := new(bytes.Buffer)
 	b.Write(version)
