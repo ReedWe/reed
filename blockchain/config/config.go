@@ -46,6 +46,7 @@ type p2p struct {
 }
 
 func init() {
+	confFileName := "config3.toml"
 	homeDir := ""
 	home := os.Getenv("HOME")
 	if home == "" {
@@ -67,9 +68,9 @@ func init() {
 		homeDir = filepath.Join(home, ".reed")
 	}
 
-	GenerateConfigIfNotExist(homeDir)
+	configFilePath := GenerateConfigIfNotExist(homeDir, confFileName)
 
-	if _, err := toml.DecodeFile("config.toml", &Default); err != nil {
+	if _, err := toml.DecodeFile(configFilePath, &Default); err != nil {
 		panic("Failed to decode config toml:" + err.Error())
 	}
 	Default.HomeDir = homeDir
