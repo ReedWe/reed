@@ -27,11 +27,12 @@ LockName="LOCK"
 `
 )
 
-func GenerateConfigIfNotExist(dir string) {
+func GenerateConfigIfNotExist(dir, fileName string) string{
 	common.EnsureDir(dir, 0700)
-	configFilePath := path.Join(dir, "config.toml")
+	configFilePath := path.Join(dir, fileName)
 
 	if !common.FileExists(configFilePath) {
 		common.MustWriteFile(configFilePath, []byte(v), 0644)
 	}
+	return configFilePath
 }

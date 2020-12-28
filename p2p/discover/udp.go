@@ -36,8 +36,9 @@ const (
 
 const (
 	responseTimeout       = 1 * time.Second
-	maxFindNodeFailures   = 2
-	autoRefreshBucketTime = 10 * time.Second
+	maxFindNodeFailures   = 5
+	refreshTableInterval  = 1 * time.Hour
+	refreshBucketInterval = 5 * time.Minute
 )
 
 type nodeEvent uint
@@ -137,7 +138,10 @@ func NewDiscover() (*UDP, error) {
 func (u *UDP) Start() {
 	go u.loop()
 	go u.readLoop()
+	u.refresh()
+}
 
+func (u *UDP) refresh() {
 	//lookup nodes
 	seeds := getSeeds()
 	for _, seedNode := range seeds {
@@ -153,10 +157,6 @@ func (u *UDP) Start() {
 		u.table.add(seedNode)
 	}
 	//TODO get nodes from db
-	//	go u.lookup(u.OurNode.ID)
-}
-
-func (u *UDP) refresh() {
 	go u.lookup(u.OurNode.ID)
 }
 
@@ -186,8 +186,7 @@ func (u *UDP) lookup(target NodeID) {
 		select {
 		case r, ok := <-replyCh:
 			log.Logger.Debugf("lookup case:replyCh")
-			if ok {
-				log.Logger.Infof("--remote node count:%d", len(r.nodes))
+			if ok && r != nil {
 				for _, n := range r.nodes {
 					if n != nil {
 						log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "port": n.UDPPort, "remoteID": n.ID.ToString(), "state": n.state}).Info("--node")
@@ -218,8 +217,6 @@ func (u *UDP) lookup(target NodeID) {
 
 func (u *UDP) sendPong(pkt *ingressPacket) {
 	log.Logger.WithFields(logrus.Fields{"remoteNodeIP": pkt.remoteAddr.IP, "port": pkt.remoteAddr.Port}).Info("send pong")
-	//TODO fetch node remoteAddr table
-	//remoteNode := u.table.getNodeAccurate(pkt.remoteID)
 	if err := u.sendPacket(pkt.remoteAddr, pongPacket, pong{To: pkt.remoteAddr}); err != nil {
 		log.Logger.Errorf("failed to pong:%v", err)
 	}
@@ -273,7 +270,8 @@ func (u *UDP) sendPacket(toUDPAddr *net.UDPAddr, e nodeEvent, msg interface{}) e
 }
 
 func (u *UDP) loop() {
-	var refreshTimer = time.NewTicker(autoRefreshBucketTime)
+	var refreshTableTicker = time.NewTicker(refreshTableInterval)
+	var refreshBucketTimer = time.NewTimer(refreshBucketInterval)
 	for {
 		select {
 		case pkt := <-u.readCh:
@@ -293,10 +291,15 @@ func (u *UDP) loop() {
 				//delay execute
 				f.remote.pushToDefer(&f)
 			}
-		case <-refreshTimer.C:
+		case <-refreshTableTicker.C:
 			//TODO if the prev refresh not done?
-			log.Logger.Info("time to refresh bucket")
+			log.Logger.Info("time to refresh table")
 			u.refresh()
+		case <-refreshBucketTimer.C:
+			log.Logger.Info("time to refresh k-bucket")
+			targetNode := u.table.chooseRandomNode()
+			u.lookup(targetNode.ID)
+			refreshBucketTimer.Reset(refreshBucketInterval)
 		default:
 		}
 	}
@@ -336,6 +339,7 @@ func (u *UDP) processQueryEvent(n *Node, e nodeEvent, pkt *ingressPacket) (*node
 		// search the closest nodes with target we know
 		nd := u.table.closest(pkt.data.(*findNode).Target)
 		u.sendFindNodeResp(n, nd)
+		u.table.updateConnTime(n)
 		return n.state, nil
 	case findNodeRespPacket:
 		err := u.processFindNodeResp(n, pkt)

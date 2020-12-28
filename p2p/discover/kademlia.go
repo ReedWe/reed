@@ -8,6 +8,7 @@ import (
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
+	"math/rand"
 	"sort"
 	"sync"
 	"time"
@@ -55,13 +56,13 @@ func NewTable(ourNode *Node) (*Table, error) {
 	return t, nil
 }
 
-func (t *Table) getNodeAccurate(id NodeID) *Node {
+func (t *Table) getNodeAccurate(id NodeID) *bNode {
 	kbs := t.Bucket[logarithmDist(t.OurNode.ID, id)]
 	bn := getNodeFromKbs(kbs, id)
 	if bn == nil {
 		return nil
 	}
-	return bn.node
+	return bn
 }
 
 func (t *Table) delete(id NodeID) {
@@ -102,6 +103,13 @@ func (t *Table) add(n *Node) {
 	// do something...
 }
 
+func (t *Table) updateConnTime(n *Node) {
+	bn := t.getNodeAccurate(n.ID)
+	if bn != nil {
+		bn.lastConnAt = time.Now().UTC()
+	}
+}
+
 func (t *Table) putToBucket(n *Node) {
 	// calculate the distance our -> node
 	dist := logarithmDist(t.OurNode.ID, n.ID)
@@ -123,6 +131,27 @@ func (t *Table) closest(target NodeID) *nodesByDistance {
 		}
 	}
 	return nd
+}
+
+//chooseRandomNode choose the node who has not performed a node lookup within an hour.
+func (t *Table) chooseRandomNode() *Node {
+	var nodes []*Node
+	bt := time.Now().Add(-1 * time.Hour)
+	for _, b := range t.Bucket {
+		for _, n := range b {
+			if bt.After(n.lastConnAt) {
+				nodes = append(nodes, n.node)
+			}
+		}
+		if len(nodes) >= kBucketSize {
+			break
+		}
+	}
+	if len(nodes) == 0 {
+		return nil
+	}
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return nodes[rd.Intn(len(nodes))]
 }
 
 func (t *Table) printLog() {
