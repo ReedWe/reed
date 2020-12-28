@@ -5,14 +5,10 @@
 package discover
 
 import (
-	"github.com/reed/blockchain/config"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
-	"net"
 	"sort"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -55,24 +51,6 @@ func NewTable(ourNode *Node) (*Table, error) {
 	t := &Table{
 		Bucket:  [IDBits][]*bNode{},
 		OurNode: ourNode,
-	}
-	seeds := config.Default.Seeds
-	if len(seeds) == 0 {
-		return nil, errors.Wrapf(newTableErr, "nodes seed is empty")
-	}
-	for _, seed := range seeds {
-		seedArr := strings.Split(seed, ":")
-		addr, err := net.ResolveIPAddr("ip", seedArr[0])
-		if err != nil {
-			return nil, errors.Wrapf(newTableErr, "failed to resolve seed IP address")
-		}
-		updPort, err := strconv.ParseUint(seedArr[1], 10, 16)
-		if err != nil {
-			return nil, errors.Wrapf(newTableErr, "failed to resolve seed IP port")
-		}
-		//TODO NODE ID
-		node := NewNode(NodeID{}, addr.IP, uint16(updPort))
-		t.putToBucket(node)
 	}
 	return t, nil
 }

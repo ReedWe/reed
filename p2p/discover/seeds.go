@@ -6,17 +6,51 @@ package discover
 
 import (
 	"encoding/hex"
+	"github.com/reed/blockchain/config"
+	"github.com/reed/log"
 	"net"
+	"strconv"
+	"strings"
 )
 
 func getSeeds() []*Node {
-	return []*Node{
-		getSeed(),
+	var nodes []*Node
+	seeds := config.Default.Seeds
+	if seeds == "" {
+		log.Logger.Info("no seeds")
+		return nodes
 	}
+
+	arr := strings.Split(seeds, ",")
+	for _, a := range arr {
+		if n := resolveNode(a); n != nil {
+			nodes = append(nodes, n)
+		}
+	}
+	return nodes
 }
 
-func getSeed() *Node {
-	sid, _ := hex.DecodeString("67032b2b262d837fbe2a0608409986c571350689")
-	addr, _ := net.ResolveIPAddr("ip", "127.0.0.1")
-	return NewNode(BytesToHash(sid), addr.IP, 30398)
+func resolveNode(enode string) *Node {
+	if enode == "" {
+		return nil
+	}
+
+	e := strings.Split(enode, "@")
+
+	id, err := hex.DecodeString(e[0])
+	if err != nil {
+		log.Logger.Errorf("failed to resolve enode:%v", err)
+		return nil
+	}
+
+	p := strings.Split(e[1], ":")
+	addr, _ := net.ResolveIPAddr("ip", p[0])
+
+	parseUint, err := strconv.ParseUint(p[1], 10, 16)
+	if err != nil {
+		log.Logger.Errorf("failed to resolve enode:%v", err)
+		return nil
+	}
+
+	return NewNode(BytesToHash(id), addr.IP, uint16(parseUint))
 }
