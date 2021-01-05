@@ -15,9 +15,7 @@ import (
 )
 
 var (
-	newDiscoverErr = errors.New("new discover error")
-	packetErr      = errors.New("packet message error")
-	readLoopErr    = errors.New("read remoteAddr udp error")
+	packetErr = errors.New("packet message error")
 )
 
 var (
@@ -36,8 +34,9 @@ const (
 
 const (
 	responseTimeout       = 1 * time.Second
-	maxFindNodeFailures   = 2
-	autoRefreshBucketTime = 10 * time.Second
+	maxFindNodeFailures   = 5
+	refreshTableInterval  = 1 * time.Hour
+	refreshBucketInterval = 5 * time.Minute
 )
 
 type nodeEvent uint
@@ -48,7 +47,7 @@ type UDP struct {
 	table         *Table
 	OurNode       *Node
 	timeoutEvents map[timeoutEvent]*time.Timer
-	nodes         map[NodeID]*Node //record all node we known
+	nodes         map[NodeID]*Node // record all nodes we have seen
 	readCh        chan ingressPacket
 	timeoutCh     chan timeoutEvent
 	queryCh       chan findNodeQuery
@@ -103,19 +102,19 @@ type conn interface {
 }
 
 func NewDiscover() (*UDP, error) {
-	//our node
+	// our node
 	o, err := getOurNode()
 	if err != nil {
 		return nil, err
 	}
 
-	//kademlia table
+	// kademlia table
 	t, err := NewTable(o)
 	if err != nil {
 		return nil, err
 	}
 
-	//udp listener
+	// udp listener
 	l, err := NewUDPListener(o.IP, o.UDPPort)
 	if err != nil {
 		return nil, err
@@ -137,8 +136,11 @@ func NewDiscover() (*UDP, error) {
 func (u *UDP) Start() {
 	go u.loop()
 	go u.readLoop()
+	u.refresh()
+}
 
-	//lookup nodes
+func (u *UDP) refresh() {
+	// lookup nodes
 	seeds := getSeeds()
 	for _, seedNode := range seeds {
 		if seedNode.IP.Equal(u.OurNode.IP) && seedNode.UDPPort == u.OurNode.UDPPort {
@@ -152,11 +154,7 @@ func (u *UDP) Start() {
 		// It will be deleted again if verification fails.
 		u.table.add(seedNode)
 	}
-	//TODO get nodes from db
-	//	go u.lookup(u.OurNode.ID)
-}
-
-func (u *UDP) refresh() {
+	// TODO get nodes from db
 	go u.lookup(u.OurNode.ID)
 }
 
@@ -177,7 +175,7 @@ func (u *UDP) lookup(target NodeID) {
 				u.queryCh <- findNodeQuery{remote: n, target: target, reply: replyCh}
 			}
 		}
-		//no more node
+		// no more node
 		if len(pendingNodes) == 0 {
 			log.Logger.Info("no more node in pendingNodes,stop lookup")
 			break
@@ -186,8 +184,7 @@ func (u *UDP) lookup(target NodeID) {
 		select {
 		case r, ok := <-replyCh:
 			log.Logger.Debugf("lookup case:replyCh")
-			if ok {
-				log.Logger.Infof("--remote node count:%d", len(r.nodes))
+			if ok && r != nil {
 				for _, n := range r.nodes {
 					if n != nil {
 						log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "port": n.UDPPort, "remoteID": n.ID.ToString(), "state": n.state}).Info("--node")
@@ -204,13 +201,13 @@ func (u *UDP) lookup(target NodeID) {
 				if v.pendingQuery == nil {
 					continue
 				}
-				//forget all pending requests
+				// forget all pending requests
 				close(v.pendingQuery.reply)
-				//if reply is nil,don't write in replyChan
-				//see func processFindNodeResp()
+				// if reply is nil,don't write in replyChan
+				// see func processFindNodeResp()
 				v.pendingQuery.reply = nil
 			}
-			//start new one
+			// start new one
 			pendingNodes = make(map[NodeID]*Node)
 		}
 	}
@@ -218,8 +215,6 @@ func (u *UDP) lookup(target NodeID) {
 
 func (u *UDP) sendPong(pkt *ingressPacket) {
 	log.Logger.WithFields(logrus.Fields{"remoteNodeIP": pkt.remoteAddr.IP, "port": pkt.remoteAddr.Port}).Info("send pong")
-	//TODO fetch node remoteAddr table
-	//remoteNode := u.table.getNodeAccurate(pkt.remoteID)
 	if err := u.sendPacket(pkt.remoteAddr, pongPacket, pong{To: pkt.remoteAddr}); err != nil {
 		log.Logger.Errorf("failed to pong:%v", err)
 	}
@@ -252,7 +247,7 @@ func (u *UDP) sendFindNodeResp(toNode *Node, nd *nodesByDistance) {
 			TCP: n.TCPPort,
 		})
 	}
-	//TODO Limit the size of the packet
+	// TODO Limit the size of the packet
 	if err := u.sendPacket(toNode.makeUDPAddr(), findNodeRespPacket, findNodeResp{Nodes: rpcNodes}); err != nil {
 		log.Logger.Errorf("failed to send findNodeResp:%v", err)
 	}
@@ -273,7 +268,8 @@ func (u *UDP) sendPacket(toUDPAddr *net.UDPAddr, e nodeEvent, msg interface{}) e
 }
 
 func (u *UDP) loop() {
-	var refreshTimer = time.NewTicker(autoRefreshBucketTime)
+	var refreshTableTicker = time.NewTicker(refreshTableInterval)
+	var refreshBucketTimer = time.NewTimer(refreshBucketInterval)
 	for {
 		select {
 		case pkt := <-u.readCh:
@@ -290,13 +286,21 @@ func (u *UDP) loop() {
 			u.processPacket(toe.node, toe.event, nil)
 		case f := <-u.queryCh:
 			if !f.maybeExecute(u) {
-				//delay execute
+				// delay execute
 				f.remote.pushToDefer(&f)
 			}
-		case <-refreshTimer.C:
-			//TODO if the prev refresh not done?
-			log.Logger.Info("time to refresh bucket")
+		case <-refreshTableTicker.C:
+			// TODO if the prev refresh not done?
+			log.Logger.Info("time to refresh table")
 			u.refresh()
+		case <-refreshBucketTimer.C:
+			log.Logger.Info("time to refresh k-bucket")
+			targetNode := u.table.chooseRandomNode()
+			if targetNode != nil {
+				log.Logger.Info("no target to lookup")
+				u.lookup(targetNode.ID)
+			}
+			refreshBucketTimer.Reset(refreshBucketInterval)
 		default:
 		}
 	}
@@ -336,6 +340,7 @@ func (u *UDP) processQueryEvent(n *Node, e nodeEvent, pkt *ingressPacket) (*node
 		// search the closest nodes with target we know
 		nd := u.table.closest(pkt.data.(*findNode).Target)
 		u.sendFindNodeResp(n, nd)
+		u.table.updateConnTime(n)
 		return n.state, nil
 	case findNodeRespPacket:
 		err := u.processFindNodeResp(n, pkt)
@@ -369,7 +374,7 @@ func (u *UDP) processFindNodeResp(n *Node, pkt *ingressPacket) error {
 	res := pkt.data.(*findNodeResp)
 	nodes := make([]*Node, len(res.Nodes))
 	for i, rn := range res.Nodes {
-		//check IP
+		// check IP
 		n := u.nodes[rn.ID]
 		if n == nil {
 			if u.OurNode.ID == rn.ID {
@@ -406,7 +411,7 @@ func (u *UDP) processFindNodeResp(n *Node, pkt *ingressPacket) error {
 	if n.pendingQuery.reply != nil {
 		n.pendingQuery.reply <- &findNodeRespReply{remoteID: n.ID, nodes: nodes}
 	}
-	n.pendingQuery = nil //reset
+	n.pendingQuery = nil // reset
 	return nil
 }
 
@@ -447,7 +452,7 @@ func (u *UDP) handlePacket(from *net.UDPAddr, buf []byte) {
 	u.readCh <- pkt
 }
 
-//makeTimeoutEvent record a timeout timer about node's event
+// makeTimeoutEvent record a timeout timer about node's event
 func (u *UDP) makeTimeoutEvent(n *Node, e nodeEvent, d time.Duration) {
 	te := timeoutEvent{node: n, event: e}
 	u.timeoutEvents[te] = time.AfterFunc(d, func() {
@@ -455,7 +460,7 @@ func (u *UDP) makeTimeoutEvent(n *Node, e nodeEvent, d time.Duration) {
 	})
 }
 
-//abortTimeoutEvent stop the timer and delete
+// abortTimeoutEvent stop the timer and delete
 func (u *UDP) abortTimeoutEvent(n *Node, e nodeEvent) {
 	te := u.timeoutEvents[timeoutEvent{node: n, event: e}]
 	if te != nil {
@@ -471,7 +476,7 @@ func (ns *nodeState) canQuery() bool {
 // header
 // [2]byte	version
 // [1]byte	packetType
-// [20]byte nodeId
+// [20]byte	nodeId
 func packet(e nodeEvent, ourId NodeID, msg interface{}) ([]byte, error) {
 	b := new(bytes.Buffer)
 	b.Write(version)

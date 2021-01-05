@@ -5,14 +5,12 @@
 package discover
 
 import (
-	"github.com/reed/blockchain/config"
-	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/types"
+	"math/rand"
 	"net"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -21,20 +19,16 @@ import (
 // Kademlia: A Peer-to-peer Information System Based on the XOR Metric
 // http://www.scs.stanford.edu/~dm/home/papers/kpos.pdf
 
-var (
-	newTableErr = errors.New("new table error")
-)
-
 const (
 	kBucketSize = 16
 
-	//The most important procedure a Kademlia participant must perform is to
-	//locate the k closest nodes to some given node ID. We call this procedure
-	//a node lookup. Kademlia employs a recursive algorithm for node lookups.
-	//The lookup initiator starts by picking α nodes remoteAddr its closest non-empty
-	//k-bucket (or, if that bucket has fewer than α entries, it just takes the
-	//α closest nodes it knows of). The initiator then sends parallel, asynchronous
-	//FIND NODE RPCs to the α nodes it has chosen.
+	// The most important procedure a Kademlia participant must perform is to
+	// locate the k closest nodes to some given node ID. We call this procedure
+	// a node lookup. Kademlia employs a recursive algorithm for node lookups.
+	// The lookup initiator starts by picking α nodes remoteAddr its closest non-empty
+	// k-bucket (or, if that bucket has fewer than α entries, it just takes the
+	// α closest nodes it knows of). The initiator then sends parallel, asynchronous
+	// FIND NODE RPCs to the α nodes it has chosen.
 	alpha = 3
 
 	IDBits = len(types.Hash{}) * 8
@@ -56,34 +50,16 @@ func NewTable(ourNode *Node) (*Table, error) {
 		Bucket:  [IDBits][]*bNode{},
 		OurNode: ourNode,
 	}
-	seeds := config.Default.Seeds
-	if len(seeds) == 0 {
-		return nil, errors.Wrapf(newTableErr, "nodes seed is empty")
-	}
-	for _, seed := range seeds {
-		seedArr := strings.Split(seed, ":")
-		addr, err := net.ResolveIPAddr("ip", seedArr[0])
-		if err != nil {
-			return nil, errors.Wrapf(newTableErr, "failed to resolve seed IP address")
-		}
-		updPort, err := strconv.ParseUint(seedArr[1], 10, 16)
-		if err != nil {
-			return nil, errors.Wrapf(newTableErr, "failed to resolve seed IP port")
-		}
-		//TODO NODE ID
-		node := NewNode(NodeID{}, addr.IP, uint16(updPort))
-		t.putToBucket(node)
-	}
 	return t, nil
 }
 
-func (t *Table) getNodeAccurate(id NodeID) *Node {
+func (t *Table) getNodeAccurate(id NodeID) *bNode {
 	kbs := t.Bucket[logarithmDist(t.OurNode.ID, id)]
 	bn := getNodeFromKbs(kbs, id)
 	if bn == nil {
 		return nil
 	}
-	return bn.node
+	return bn
 }
 
 func (t *Table) delete(id NodeID) {
@@ -124,17 +100,23 @@ func (t *Table) add(n *Node) {
 	// do something...
 }
 
+func (t *Table) updateConnTime(n *Node) {
+	bn := t.getNodeAccurate(n.ID)
+	if bn != nil {
+		bn.lastConnAt = time.Now().UTC()
+	}
+}
+
 func (t *Table) putToBucket(n *Node) {
 	// calculate the distance our -> node
 	dist := logarithmDist(t.OurNode.ID, n.ID)
 
-	nodes := t.Bucket[dist]
-	if contains(nodes, n.ID) {
+	if contains(t.Bucket[dist], n.ID) {
 		// node exists
 		return
 	}
 	// put to table
-	nodes = append(nodes, &bNode{node: n})
+	t.Bucket[dist] = append(t.Bucket[dist], &bNode{node: n})
 }
 
 func (t *Table) closest(target NodeID) *nodesByDistance {
@@ -145,6 +127,56 @@ func (t *Table) closest(target NodeID) *nodesByDistance {
 		}
 	}
 	return nd
+}
+
+// chooseRandomNode choose the node who has not performed a node lookup within an hour.
+func (t *Table) chooseRandomNode() *Node {
+	var nodes []*Node
+	bt := time.Now().Add(-1 * time.Hour)
+	for _, b := range t.Bucket {
+		for _, n := range b {
+			if bt.After(n.lastConnAt) {
+				nodes = append(nodes, n.node)
+			}
+		}
+		if len(nodes) >= kBucketSize {
+			break
+		}
+	}
+	if len(nodes) == 0 {
+		return nil
+	}
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return nodes[rd.Intn(len(nodes))]
+}
+
+func (t *Table) GetWithExclude(count int, excludePeerIDs []string) []*Node {
+	exclude := func(ip net.IP, tcpPort uint16) bool {
+		if len(excludePeerIDs) == 0 {
+			return false
+		}
+		for _, id := range excludePeerIDs {
+			if id == net.JoinHostPort(ip.String(), strconv.FormatUint(uint64(tcpPort), 10)) {
+				return true
+			}
+		}
+		return false
+	}
+
+	var nodes []*Node
+
+loop:
+	for _, b := range t.Bucket {
+		for _, n := range b {
+			if !exclude(n.node.IP, n.node.TCPPort) {
+				nodes = append(nodes, n.node)
+				if count == len(nodes) {
+					break loop
+				}
+			}
+		}
+	}
+	return nodes
 }
 
 func (t *Table) printLog() {
@@ -232,7 +264,7 @@ func logarithmDist(a, b NodeID) int {
 	for i := range a {
 		x := a[i] ^ b[i]
 		if x != 0 {
-			lz := i*8 + lzcount[x] //256bit leading zero counts
+			lz := i*8 + lzcount[x] // 256bit leading zero counts
 			return IDBits - 1 - lz
 		}
 	}

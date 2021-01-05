@@ -8,9 +8,8 @@ import (
 	"encoding/hex"
 	"github.com/reed/blockchain/config"
 	"github.com/reed/errors"
+	"github.com/reed/log"
 	"net"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -67,11 +66,12 @@ func (n *Node) validateComplete() error {
 	return nil
 }
 
-func NewNode(id NodeID, ip net.IP, udpPort uint16) *Node {
+func NewNode(id NodeID, ip net.IP, port uint16) *Node {
 	n := &Node{
 		ID:      id,
 		IP:      ip,
-		UDPPort: udpPort,
+		UDPPort: port,
+		TCPPort: port,
 		nodeNetGuts: nodeNetGuts{
 			state: unknown,
 		},
@@ -81,20 +81,16 @@ func NewNode(id NodeID, ip net.IP, udpPort uint16) *Node {
 }
 
 func getOurNode() (*Node, error) {
-	arr := strings.Split(config.Default.LocalAddr, ":")
-	addr, err := net.ResolveIPAddr("ip", arr[0])
-	if err != nil {
-		return nil, errors.Wrapf(getOurNodeErr, "failed to resolve our node IP address")
+	node := resolveNode(config.Default.OurNode)
+	if node == nil {
+		return nil, errors.Wrapf(getOurNodeErr, "config.toml:missing self node")
 	}
-
-	port, err := strconv.ParseUint(arr[1], 10, 16)
-	if err != nil {
-		return nil, errors.Wrapf(getOurNodeErr, "failed to resolve our node IP port")
-	}
-
-	//TODO our node ID
-	ds, _ := hex.DecodeString(config.Default.OurID)
-	return NewNode(BytesToHash(ds), addr.IP, uint16(port)), nil
+	log.Logger.Info("Our Node Info:")
+	log.Logger.Infof("--ID:%s", node.ID.ToString())
+	log.Logger.Infof("--IP:%s", node.IP.String())
+	log.Logger.Infof("--UDP Port:%d", node.UDPPort)
+	log.Logger.Infof("--TCP Port:%d", node.TCPPort)
+	return node, nil
 }
 
 func BytesToHash(b []byte) NodeID {

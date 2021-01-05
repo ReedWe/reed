@@ -9,9 +9,9 @@ import (
 )
 
 type Store interface {
-	//SaveTx(tx *types.Tx) error
+	// SaveTx(tx *types.Tx) error
 	//
-	//GetTx(id []byte) (*types.Tx, error)
+	// GetTx(id []byte) (*types.Tx, error)
 
 	GetUtxo(id []byte) (*types.UTXO, error)
 

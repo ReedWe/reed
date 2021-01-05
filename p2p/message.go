@@ -4,6 +4,7 @@
 
 package p2p
 
-type TCPListener struct {
-
-}
+const (
+	handshakeCode     = byte(0xff)
+	handshakeRespCode = byte(0xfe)
+)
