@@ -7,8 +7,8 @@ package p2p
 import "github.com/reed/p2p/discover"
 
 type Server struct {
-	TCP     *TCPListener
-	network *discover.UDP
+	tcpListener *Listener
+	udp         *discover.UDP
 }
 
 func NewP2PServer() (*Server, error) {
@@ -16,11 +16,19 @@ func NewP2PServer() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	listener, err := NewListener(udp.OurNode.IP, udp.OurNode.TCPPort)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Server{
-		network: udp,
+		tcpListener: listener,
+		udp:         udp,
 	}, nil
 }
 
 func (s *Server) Start() {
-	s.network.Start()
+	s.udp.Start()
+	s.tcpListener.Start()
 }

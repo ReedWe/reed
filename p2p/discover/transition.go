@@ -36,10 +36,10 @@ func init() {
 		enter: func(u *UDP, n *Node) {
 			u.table.delete(n.ID)
 
-			//reset timeout count
+			// reset timeout count
 			n.queryTimeouts = 0
 
-			//clear defer query
+			// clear defer query
 			for _, q := range n.deferQueries {
 				if q.reply != nil {
 					q.reply <- nil
@@ -47,7 +47,7 @@ func init() {
 			}
 			n.deferQueries = nil
 
-			//clear pending query
+			// clear pending query
 			if n.pendingQuery != nil {
 				if n.pendingQuery != nil {
 					n.pendingQuery.reply <- nil

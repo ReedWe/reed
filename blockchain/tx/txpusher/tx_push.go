@@ -37,11 +37,11 @@ func MaybePush(chain *blockchain.Chain, tx *types.Tx) error {
 		return err
 	}
 
-	//push into tx pool
+	// push into tx pool
 	if err := chain.Txpool.AddTx(tx); err != nil {
 		return err
 	}
 
-	//TODO broadcast this transaction
+	// TODO broadcast this transaction
 	return nil
 }

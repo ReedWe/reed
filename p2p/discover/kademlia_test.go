@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"net"
 	"testing"
 )
 
@@ -59,5 +60,101 @@ func TestNodesByDistance(t *testing.T) {
 	if !bytes.Equal(nd.entries[2].ID.Bytes(), node.ID.Bytes()) {
 		t.Error("nodesByDistance push error")
 	}
+}
 
+type tn struct {
+	name string
+	node *Node
+}
+
+func TestGetWithExclude(t *testing.T) {
+	tb := newTable()
+
+	minDist := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), byte(1)}
+	secondDist := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)}
+
+	ns := tb.GetWithExclude(1, nil)
+	if !bytes.Equal(ns[0].ID.Bytes(), minDist) {
+		t.Fatal("the first(minimum distance) not right")
+	}
+
+	ns2 := tb.GetWithExclude(4, []string{net.IP{123, 123, 123, 13}.String() + ":" + "8002"})
+	if len(ns2) != 4 {
+		t.Fatal("wrong count")
+	}
+	for _, n := range ns2 {
+		if bytes.Equal(n.ID.Bytes(), secondDist) {
+			t.Fatal("does not exclude the given node")
+		}
+	}
+
+}
+
+func newTable() *Table {
+	our := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(1)},
+	}
+	tb, _ := NewTable(our)
+
+	n2 := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), byte(1)},
+	}
+	n3 := &Node{
+		ID:      NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)},
+		TCPPort: 8002,
+		UDPPort: 8001,
+		IP:      net.IP{123, 123, 123, 13},
+	}
+	n4 := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(4), byte(3), byte(2), byte(1)},
+	}
+	n5 := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(5), byte(4), byte(3), byte(2), byte(1)},
+	}
+	n6 := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(6), byte(5), byte(4), byte(3), byte(2), byte(1)},
+	}
+	n7 := &Node{
+		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(7), byte(6), byte(5), byte(4), byte(3), byte(2), byte(1)},
+	}
+	var tns []*tn
+	tns = append(tns, &tn{
+		name: "n2",
+		node: n2,
+	})
+	tns = append(tns, &tn{
+		name: "n3",
+		node: n3,
+	})
+	tns = append(tns, &tn{
+		name: "n4",
+		node: n4,
+	})
+	tns = append(tns, &tn{
+		name: "n5",
+		node: n5,
+	})
+	tns = append(tns, &tn{
+		name: "n6",
+		node: n6,
+	})
+	tns = append(tns, &tn{
+		name: "n7",
+		node: n7,
+	})
+
+	for _, t := range tns {
+		tb.putToBucket(t.node)
+	}
+
+	for i, b := range tb.Bucket {
+		for _, n := range b {
+			for _, t := range tns {
+				if n.node == t.node {
+					fmt.Printf("name:%s k-bucket:%d\n", t.name, i)
+				}
+			}
+		}
+	}
+	return tb
 }

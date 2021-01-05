@@ -119,7 +119,7 @@ loop:
 			repack = true
 			break loop
 		default:
-			//just for no block,do nothing
+			// just for no block,do nothing
 		}
 
 		if pow.CheckProofOfWork(block.BigNumber, block.GetHash()) {
@@ -127,10 +127,10 @@ loop:
 			break loop
 		} else {
 			if block.Nonce == maxTries {
-				//reset nonce
+				// reset nonce
 				block.Nonce = 0
 
-				//change coinbase tx's scriptSig and continue
+				// change coinbase tx's scriptSig and continue
 				extraNonce++
 				m.incrementExtraNonce(extraNonce, block)
 			} else {
@@ -167,17 +167,17 @@ func (m *Miner) buildBlock(pre *types.Block) (*types.Block, error) {
 	}
 	newBlock.Transactions = txs
 
-	//recalculate difficulty
+	// recalculate difficulty
 	newBlock.BigNumber = pow.GetDifficulty(newBlock, m.chain.BlockManager.GetAncestor)
-	//set tx merkle root
+	// set tx merkle root
 	newBlock.MerkleRootHash = merkle.ComputeMerkleRoot(newBlock.Transactions)
 	return newBlock, nil
 }
 
-//when the nonce reaches the maximum value,change the scriptSig value of coinbase transaction
-//and reset:nonce=0
+// when the nonce reaches the maximum value,change the scriptSig value of coinbase transaction
+// and reset:nonce=0
 func (m *Miner) incrementExtraNonce(extraNonce uint64, b *types.Block) {
 	b.Transactions[0].TxInput[0].ScriptSig = bytes.Join([][]byte{b.Transactions[0].TxInput[0].ScriptSig, []byte(strconv.FormatUint(extraNonce, 10))}, []byte{})
-	//recompute merkle root
+	// recompute merkle root
 	b.MerkleRootHash = merkle.ComputeMerkleRoot(b.Transactions)
 }

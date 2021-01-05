@@ -54,7 +54,7 @@ func SubmitTx(chain *blockchain.Chain, reqTx *types.SubmitTxRequest) (*types.Sum
 	}
 
 	txId := tx.GetID()
-	//ScriptSig
+	// ScriptSig
 	for _, input := range tx.TxInput {
 		scriptSig, err := input.GenerateScriptSig(wt, &txId)
 		if err != nil {
@@ -136,7 +136,7 @@ func mergeSameAddrOutput(outputs []*types.TxOutput) ([]*types.TxOutput, error) {
 	var err error
 	for _, output := range outputs {
 		if item, ok := addrMap[string(output.Address)]; ok {
-			//exist same address output,merge
+			// exist same address output,merge
 			item.Amount, err = math.AddUint64(item.Amount, output.Amount)
 			if err != nil {
 				return nil, err
