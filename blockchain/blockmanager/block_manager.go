@@ -88,12 +88,12 @@ func (bm *BlockManager) reorganize(block *types.Block) error {
 		return err
 	}
 
-	//TODO remember set highestBlock
-	//bm.highestBlock =
+	// TODO remember set highestBlock
+	// bm.highestBlock =
 	fmt.Println(reserves, discards)
 
-	//TODO SendBreakWork maybe false: block == newHighestBlock && config.Default.Mining
-	//bm.blockReceptionCh <- &types.RecvWrap{Block: block, SendBreakWork: true}
+	// TODO SendBreakWork maybe false: block == newHighestBlock && config.Default.Mining
+	// bm.blockReceptionCh <- &types.RecvWrap{Block: block, SendBreakWork: true}
 	return nil
 }
 

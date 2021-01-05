@@ -42,20 +42,20 @@ func TestPacket(t *testing.T) {
 	m[&t1] = "1111111111111111111111"
 	m[&t2] = "2222222222222222222222"
 
-	//nt := timeoutEvent{
+	// nt := timeoutEvent{
 	//	node: NewNode(
 	//		NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3)},
 	//		addr.IP,
 	//		9888,
 	//	),
 	//	event: findNodeRespPacket,
-	//}
+	// }
 
-	//n := m[timeoutEvent{
+	// n := m[timeoutEvent{
 	//	node:  n1,
 	//	event: findNodeRespPacket,
-	//}]
+	// }]
 
-fmt.Println(findNodeRespTimeout)
+	fmt.Println(findNodeRespTimeout)
 
 }

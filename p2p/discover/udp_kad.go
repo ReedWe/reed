@@ -20,7 +20,7 @@ func (g *nodeNetGuts) executeDefer(u *UDP) {
 	}
 	q := g.deferQueries[0]
 	if q.maybeExecute(u) {
-		//move on
+		// move on
 		g.deferQueries = append(g.deferQueries[:0], g.deferQueries[1:]...)
 	}
 }
