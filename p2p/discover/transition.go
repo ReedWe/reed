@@ -34,7 +34,8 @@ func init() {
 	unknown = &nodeState{
 		name: "unknown",
 		enter: func(u *UDP, n *Node) {
-			u.table.delete(n.ID)
+			log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "Port": n.UDPPort, "nodeID": n.ID.ToString()}).Info("delete node from table")
+			u.Table.delete(n.ID)
 
 			// reset timeout count
 			n.queryTimeouts = 0
@@ -137,7 +138,7 @@ func init() {
 			log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "Port": n.UDPPort, "nodeID": n.ID.ToString()}).Debug("=know node=")
 			n.queryTimeouts = 0
 			n.executeDefer(u)
-			u.table.Add(n)
+			u.Table.Add(n)
 		},
 		handle: func(u *UDP, n *Node, e nodeEvent, pkt *ingressPacket) (*nodeState, error) {
 			log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "Port": n.UDPPort, "event": e, "nodeID": n.ID.ToString()}).Debug("transition[know].handle")

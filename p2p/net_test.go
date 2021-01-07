@@ -33,6 +33,15 @@ func getOurNode() *discover.Node {
 	}
 }
 
+func getRemoteNode() *discover.Node {
+	return &discover.Node{
+		ID:      tosNodeID,
+		TCPPort: uint16(tosPort),
+		UDPPort: uint16(tosPort),
+		IP:      net.IP{127, 0, 0, 1},
+	}
+}
+
 func getOurNodeInfo() *NodeInfo {
 	return &NodeInfo{
 		ID:         ourNodeID,
@@ -47,7 +56,7 @@ func startUpTheOtherSidePeer() error {
 	}
 
 	other := mockKadTableRemote()
-	netWork, err := NewNetWork(getOurNode(), other, nil, netsync.Handle)
+	netWork, err := NewNetWork(getRemoteNode(), other, nil, netsync.Handle)
 
 	go func() {
 		for {

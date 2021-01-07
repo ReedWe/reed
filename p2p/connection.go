@@ -13,6 +13,7 @@ import (
 	"github.com/tendermint/tmlibs/common"
 	"net"
 	"sync"
+	"time"
 )
 
 const (
@@ -40,10 +41,11 @@ type state struct {
 	val connState
 }
 
-func NewConnection(peerAddr string, disConnCh chan<- string, rawConn net.Conn, ourNodeInfo *NodeInfo, handleFunc HandleFunc) *Conn {
+func NewConnection(peerListenAddr string, disConnCh chan<- string, rawConn net.Conn, ourNodeInfo *NodeInfo, handleFunc HandleFunc) *Conn {
+	rawConn.SetReadDeadline(time.Time{}) // reset read deadline:not time out.
 	conn := &Conn{
 		ourNodeInfo: ourNodeInfo,
-		peerAddr:    peerAddr,
+		peerAddr:    peerListenAddr,
 		rawConn:     rawConn,
 		disConnCh:   disConnCh,
 		state:       state{val: connectSt},
@@ -64,6 +66,8 @@ func (c *Conn) OnStop() {
 	c.setState(localDisConnSt)
 	if err := c.rawConn.Close(); err != nil {
 		log.Logger.Error(err)
+	} else {
+		log.Logger.Info("closed conn")
 	}
 }
 
@@ -76,19 +80,21 @@ func (c *Conn) readGoroutine() {
 		writeMsg := c.handle(input.Bytes())
 		if writeMsg != nil {
 			if err := c.write(writeMsg); err != nil {
-				log.Logger.Errorf("failed to write:%v", err)
+				log.Logger.Errorf("connection.read failed to write:%v", err)
 			}
 		}
 	}
 	if input.Err() != nil {
-		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Error(input.Err())
-		if c.getState() == connectSt {
-			// disconnection by the other side
-			c.setState(remoteDisConnSt)
-			c.disConnCh <- c.peerAddr
-		}
-		return
+		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine error:%v", input.Err())
+	} else {
+		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine has closed")
 	}
+	if c.getState() == connectSt {
+		// disconnection by the other side
+		c.setState(remoteDisConnSt)
+		c.disConnCh <- c.peerAddr
+	}
+	return
 }
 
 func (c *Conn) specialMsg(msg []byte) bool {

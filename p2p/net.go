@@ -6,6 +6,7 @@ package p2p
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/p2p/discover"
@@ -54,30 +55,32 @@ func NewNetWork(ourNode *discover.Node, t *discover.Table, acceptCh <-chan net.C
 		quitCh:      make(chan struct{}),
 	}
 	n.BaseService = *common.NewBaseService(nil, "network", n)
-	if err := n.Start(); err != nil {
-		return nil, err
-	}
 	return n, nil
 }
 
 func (n *Network) OnStart() error {
 	go n.loop()
 	go n.loopFillPeer()
+	fmt.Println("★ p2p.network Server OnStart")
 	return nil
 }
 
 func (n *Network) OnStop() {
+	close(n.quitCh)
 	for _, v := range n.pm.peers {
 		n.releasePeer(v)
 	}
-	close(n.quitCh)
 	close(n.disConnCh)
+	fmt.Println("★ p2p.network Server OnStop")
 }
 
 func (n *Network) loop() {
 	for {
 		select {
-		case c := <-n.acceptCh:
+		case c, ok := <-n.acceptCh:
+			if !ok {
+				return
+			}
 			log.Logger.WithFields(logrus.Fields{"remote addr": c.RemoteAddr().String()}).Info("->accept peer")
 			if err := n.addPeerFromAccept(c); err != nil {
 				log.Logger.Error(err)
@@ -118,10 +121,10 @@ func (n *Network) addPeerFromAccept(conn net.Conn) error {
 }
 
 func (n *Network) fillPeer() {
-	log.Logger.Debug("Fill Peer onstart")
+	log.Logger.Debug("time to fill Peer")
 	nodes := n.table.GetWithExclude(activelyPeerCount, n.pm.IDs())
 	if len(nodes) == 0 {
-		log.Logger.Debug("no any available node")
+		log.Logger.Debug("no available node to dial")
 		return
 	}
 
@@ -142,14 +145,12 @@ func (n *Network) fillPeer() {
 		go n.dialPeerAndAdd(addr, &wg)
 	}
 	wg.Wait()
-	log.Logger.Debug("Fill peer complete")
 }
 
 func (n *Network) dialPeerAndAdd(addr string, wg *sync.WaitGroup) {
 	defer func() {
 		n.dialing.remove(addr)
 		wg.Done()
-		log.Logger.WithField("peerAddr", addr).Info("dial peer Done")
 	}()
 
 	n.dialing.add(addr)

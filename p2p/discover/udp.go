@@ -7,9 +7,11 @@ package discover
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/sirupsen/logrus"
+	"github.com/tendermint/tmlibs/common"
 	"net"
 	"time"
 )
@@ -42,15 +44,17 @@ const (
 type nodeEvent uint
 
 type UDP struct {
+	common.BaseService
 	conn
 	listener      *udpListener
-	table         *Table
+	Table         *Table
 	OurNode       *Node
 	timeoutEvents map[timeoutEvent]*time.Timer
 	nodes         map[NodeID]*Node // record all nodes we have seen
 	readCh        chan ingressPacket
 	timeoutCh     chan timeoutEvent
 	queryCh       chan findNodeQuery
+	quitCh        chan struct{}
 }
 
 type ping struct {
@@ -120,9 +124,9 @@ func NewDiscover() (*UDP, error) {
 		return nil, err
 	}
 
-	return &UDP{
+	udp := &UDP{
 		OurNode:       o,
-		table:         t,
+		Table:         t,
 		conn:          l.conn,
 		listener:      l,
 		nodes:         map[NodeID]*Node{},
@@ -130,18 +134,29 @@ func NewDiscover() (*UDP, error) {
 		readCh:        make(chan ingressPacket, 100),
 		timeoutCh:     make(chan timeoutEvent),
 		queryCh:       make(chan findNodeQuery),
-	}, nil
+		quitCh:        make(chan struct{}),
+	}
+	udp.BaseService = *common.NewBaseService(nil, "udp", udp)
+	return udp, nil
 }
 
-func (u *UDP) Start() {
+func (u *UDP) OnStart() error {
 	go u.loop()
 	go u.readLoop()
 	u.refresh()
+	fmt.Println("★ p2p.udp Server OnStart")
+	return nil
+}
+
+func (u *UDP) OnStop() {
+	close(u.quitCh)
+	fmt.Println("★ p2p.udp Server OnStop")
 }
 
 func (u *UDP) refresh() {
 	// lookup nodes
 	seeds := getSeeds()
+	log.Logger.Infof("node seed count:%d", len(seeds))
 	for _, seedNode := range seeds {
 		if seedNode.IP.Equal(u.OurNode.IP) && seedNode.UDPPort == u.OurNode.UDPPort {
 			continue
@@ -152,9 +167,9 @@ func (u *UDP) refresh() {
 		}
 		// Force-add the seed node so Lookup does something.
 		// It will be deleted again if verification fails.
-		u.table.Add(seedNode)
+		u.Table.Add(seedNode)
 	}
-	// TODO get nodes from db
+	// TODO get nodes from db?
 	go u.lookup(u.OurNode.ID)
 }
 
@@ -193,7 +208,7 @@ func (u *UDP) lookup(target NodeID) {
 				}
 				delete(pendingNodes, r.remoteID)
 			} else {
-				log.Logger.Info("reply chan closed")
+				log.Logger.Debug("reply chan closed")
 			}
 		case <-time.After(responseTimeout):
 			log.Logger.Infof("lookup timeout,pendingNodes count %d", len(pendingNodes))
@@ -209,6 +224,8 @@ func (u *UDP) lookup(target NodeID) {
 			}
 			// start new one
 			pendingNodes = make(map[NodeID]*Node)
+		case <-u.quitCh:
+			return
 		}
 	}
 }
@@ -280,11 +297,12 @@ func (u *UDP) loop() {
 		case toe := <-u.timeoutCh:
 			log.Logger.WithFields(logrus.Fields{"remoteID": toe.node.ID.ToString(), "IP": toe.node.IP, "PORT": toe.node.UDPPort, "event": toe.event}).Info("UDP timeout event")
 			if u.timeoutEvents[toe] == nil {
-				continue
+				break
 			}
 			delete(u.timeoutEvents, toe)
 			u.processPacket(toe.node, toe.event, nil)
 		case f := <-u.queryCh:
+			fmt.Println("<-queryCh")
 			if !f.maybeExecute(u) {
 				// delay execute
 				f.remote.pushToDefer(&f)
@@ -295,12 +313,16 @@ func (u *UDP) loop() {
 			u.refresh()
 		case <-refreshBucketTimer.C:
 			log.Logger.Info("time to refresh k-bucket")
-			targetNode := u.table.chooseRandomNode()
+			targetNode := u.Table.chooseRandomNode()
 			if targetNode != nil {
-				log.Logger.Info("no target to lookup")
 				u.lookup(targetNode.ID)
+			} else {
+				log.Logger.Info("no target to lookup")
 			}
 			refreshBucketTimer.Reset(refreshBucketInterval)
+		case <-u.quitCh:
+			log.Logger.Info("udp.loop() quit")
+			return
 		default:
 		}
 	}
@@ -338,9 +360,9 @@ func (u *UDP) processQueryEvent(n *Node, e nodeEvent, pkt *ingressPacket) (*node
 	switch e {
 	case findNodePacket:
 		// search the closest nodes with target we know
-		nd := u.table.closest(pkt.data.(*findNode).Target)
+		nd := u.Table.closest(pkt.data.(*findNode).Target)
 		u.sendFindNodeResp(n, nd)
-		u.table.updateConnTime(n)
+		u.Table.updateConnTime(n)
 		return n.state, nil
 	case findNodeRespPacket:
 		err := u.processFindNodeResp(n, pkt)
