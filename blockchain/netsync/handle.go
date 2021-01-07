@@ -8,11 +8,11 @@ const (
 	getBlockHeaderCode = byte(0x01)
 )
 
-func Handle(msg []byte) ([]byte, error) {
+func Handle(msg []byte) []byte {
 	var writeBytes []byte
 	switch msgType := msg[0]; msgType {
 	case getBlockHeaderCode:
 		writeBytes = []byte("this is my block header")
 	}
-	return writeBytes, nil
+	return writeBytes
 }

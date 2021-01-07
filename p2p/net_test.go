@@ -3,3 +3,11 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 package p2p
+
+import "testing"
+
+func TestNewNetWork(t *testing.T) {
+
+
+
+}
