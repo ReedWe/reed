@@ -12,6 +12,7 @@ import (
 	"github.com/reed/blockchain/config"
 	"github.com/reed/errors"
 	"github.com/reed/log"
+	"github.com/reed/p2p"
 	"github.com/reed/types"
 	"github.com/reed/wallet"
 	cmn "github.com/tendermint/tmlibs/common"
@@ -25,8 +26,9 @@ var (
 )
 
 type API struct {
-	Chain  *bc.Chain
-	Server *http.Server
+	Chain   *bc.Chain
+	Server  *http.Server
+	p2pServ *p2p.Server
 }
 
 type Res struct {
@@ -34,11 +36,11 @@ type Res struct {
 	Data    interface{} `json:"data"`
 }
 
-func NewApi(c *bc.Chain) *API {
+func NewApi(c *bc.Chain, p2pServ *p2p.Server) *API {
 
 	api := &API{}
 
-	//init api server
+	// init api server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprint(writer, "Welcome to Reed chain!")
@@ -52,6 +54,7 @@ func NewApi(c *bc.Chain) *API {
 
 	api.Chain = c
 	api.Server = httpServer
+	api.p2pServ = p2pServ
 
 	return api
 }
@@ -124,27 +127,27 @@ func (a *API) SubmitTxHandler(writer http.ResponseWriter, request *http.Request)
 
 		}
 
-		//m := &types.SubmitTxRequest{}
-		//err := json.Unmarshal(data, m)
-		//if err != nil {
+		// m := &types.SubmitTxRequest{}
+		// err := json.Unmarshal(data, m)
+		// if err != nil {
 		//	PrintErrorRes(writer, err)
 		//	return
-		//}
-		//txResponse, err := txbuilder.SubmitTx(a.Chain, m)
-		//if err != nil {
+		// }
+		// txResponse, err := txbuilder.SubmitTx(a.Chain, m)
+		// if err != nil {
 		//	log.Logger.Error(err.Error())
 		//	PrintErrorRes(writer, err.Error())
 		//	return
-		//}
-		//PrintSuccessRes(writer, txResponse)
+		// }
+		// PrintSuccessRes(writer, txResponse)
 	}
 }
 
 //
-//func jsonHandler(f interface{}) http.Handler {
+// func jsonHandler(f interface{}) http.Handler {
 //	h, err := httpjson.Handler(f, errorFormatter.Write)
 //	if err != nil {
 //		panic(err)
 //	}
 //	return h
-//}
+// }

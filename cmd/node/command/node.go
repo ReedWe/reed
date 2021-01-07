@@ -5,6 +5,7 @@
 package command
 
 import (
+	"fmt"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/reed/api"
 	bc "github.com/reed/blockchain"
@@ -27,7 +28,7 @@ type Node struct {
 	chain        *bc.Chain
 	miner        *miner.Miner
 	instanceLock fileutil.Releaser
-	discover     *p2p.Server
+	p2pServ      *p2p.Server
 }
 
 func NewNode() *Node {
@@ -42,9 +43,14 @@ func NewNode() *Node {
 		common.Exit(common.Fmt("Failed to create chain:%v", err))
 	}
 
+	p2p, err := p2p.NewP2PServer()
+	if err != nil {
+		common.Exit(common.Fmt(err.Error()))
+	}
+
 	w, _ := wallet.My("123")
 	node := &Node{
-		api:          api.NewApi(chain),
+		api:          api.NewApi(chain, p2p),
 		chain:        chain,
 		miner:        miner.NewMiner(chain, w, chain.GetWriteReceptionChan(), chain.GetReadBreakWorkChan()),
 		instanceLock: releaser,
@@ -52,11 +58,7 @@ func NewNode() *Node {
 
 	node.BaseService = *common.NewBaseService(nil, "Node", node)
 
-	p2p, err := p2p.NewP2PServer()
-	if err != nil {
-		common.Exit(common.Fmt(err.Error()))
-	}
-	node.discover = p2p
+	node.p2pServ = p2p
 
 	return node
 }
@@ -71,8 +73,11 @@ func (n *Node) OnStart() error {
 			return err
 		}
 	}
-	n.discover.Start()
+	if err := n.p2pServ.Start(); err != nil {
+		return err
+	}
 	log.Logger.Info("Node started successfully.")
+	fmt.Println("★ Node Server OnStart")
 	return nil
 }
 
@@ -82,8 +87,12 @@ func (n *Node) OnStop() {
 	if err := n.instanceLock.Release(); err != nil {
 		log.Logger.Errorf("Can't release dataDir locke:%v", err)
 	}
+	if err := n.p2pServ.Stop(); err != nil {
+		log.Logger.Error(err)
+	}
 	n.instanceLock = nil
 	log.Logger.Info("Node has shut down.")
+	fmt.Println("★ Node Server OnStop")
 }
 
 func (n *Node) RunForever() {

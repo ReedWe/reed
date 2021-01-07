@@ -8,9 +8,7 @@ import (
 	"github.com/reed/log"
 	"github.com/reed/types"
 	"math/rand"
-	"net"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -63,10 +61,10 @@ func (t *Table) getNodeAccurate(id NodeID) *bNode {
 }
 
 func (t *Table) delete(id NodeID) {
-	kbs := t.Bucket[logarithmDist(t.OurNode.ID, id)]
-	for i, bn := range kbs {
+	dist := logarithmDist(t.OurNode.ID, id)
+	for i, bn := range t.Bucket[dist] {
 		if bn.node.ID == id {
-			kbs = append(kbs[:i], kbs[i+1:]...)
+			t.Bucket[dist] = append(t.Bucket[dist][:i], t.Bucket[dist][i+1:]...)
 			return
 		}
 	}
@@ -119,11 +117,24 @@ func (t *Table) closest(target NodeID) *nodesByDistance {
 
 // chooseRandomNode choose the node who has not performed a node lookup within an hour.
 func (t *Table) chooseRandomNode() *Node {
-	var nodes []*Node
 	bt := time.Now().Add(-1 * time.Hour)
+
+	n := t.getRandomOne(func(bn *bNode) bool {
+		return bt.After(bn.lastConnAt)
+	})
+	if n == nil {
+		n = t.getRandomOne(func(bn *bNode) bool {
+			return true
+		})
+	}
+	return n
+}
+
+func (t *Table) getRandomOne(condition func(bn *bNode) bool) *Node {
+	var nodes []*Node
 	for _, b := range t.Bucket {
 		for _, n := range b {
-			if bt.After(n.lastConnAt) {
+			if condition(n) {
 				nodes = append(nodes, n.node)
 			}
 		}
@@ -138,13 +149,13 @@ func (t *Table) chooseRandomNode() *Node {
 	return nodes[rd.Intn(len(nodes))]
 }
 
-func (t *Table) GetWithExclude(count int, excludePeerIDs []string) []*Node {
-	exclude := func(ip net.IP, tcpPort uint16) bool {
+func (t *Table) GetWithExclude(count int, excludePeerIDs []NodeID) []*Node {
+	exclude := func(id NodeID) bool {
 		if len(excludePeerIDs) == 0 {
 			return false
 		}
-		for _, id := range excludePeerIDs {
-			if id == net.JoinHostPort(ip.String(), strconv.FormatUint(uint64(tcpPort), 10)) {
+		for _, eID := range excludePeerIDs {
+			if eID == id {
 				return true
 			}
 		}
@@ -156,7 +167,7 @@ func (t *Table) GetWithExclude(count int, excludePeerIDs []string) []*Node {
 loop:
 	for _, b := range t.Bucket {
 		for _, n := range b {
-			if !exclude(n.node.IP, n.node.TCPPort) {
+			if !exclude(n.node.ID) {
 				nodes = append(nodes, n.node)
 				if count == len(nodes) {
 					break loop
