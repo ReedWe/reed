@@ -152,7 +152,7 @@ func (u *UDP) refresh() {
 		}
 		// Force-add the seed node so Lookup does something.
 		// It will be deleted again if verification fails.
-		u.table.add(seedNode)
+		u.table.Add(seedNode)
 	}
 	// TODO get nodes from db
 	go u.lookup(u.OurNode.ID)

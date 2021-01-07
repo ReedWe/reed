@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/tendermint/tmlibs/common"
 	"net"
@@ -93,15 +94,8 @@ func (c *Conn) readGoroutine() {
 func (c *Conn) specialMsg(msg []byte) bool {
 	switch msgType := msg[0]; msgType {
 	case handshakeCode:
-		b, err := json.Marshal(c.ourNodeInfo)
-		if err != nil {
-			log.Logger.Errorf("special message json marshal error:%v", err)
-		}
-		if err = c.write(bytes.Join([][]byte{
-			{handshakeRespCode},
-			b,
-		}, []byte{})); err != nil {
-			log.Logger.Errorf("special message write error:%v", err)
+		if err := writeOurNodeInfo(c.rawConn, c.ourNodeInfo); err != nil {
+			log.Logger.Error(err)
 		}
 		return true
 	}
@@ -122,6 +116,20 @@ func (c *Conn) setState(a connState) {
 	defer c.state.mtx.Unlock()
 	c.state.mtx.Lock()
 	c.state.val = a
+}
+
+func writeOurNodeInfo(rawConn net.Conn, ourNodeInfo *NodeInfo) error {
+	b, err := json.Marshal(ourNodeInfo)
+	if err != nil {
+		return errors.Wrap(err, "special message json marshal error")
+	}
+	if err = write(rawConn, bytes.Join([][]byte{
+		{handshakeRespCode},
+		b,
+	}, []byte{})); err != nil {
+		return errors.Wrap(err, "special message write error")
+	}
+	return nil
 }
 
 func write(rawConn net.Conn, msg []byte) error {

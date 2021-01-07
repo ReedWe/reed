@@ -137,7 +137,7 @@ func init() {
 			log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "Port": n.UDPPort, "nodeID": n.ID.ToString()}).Debug("=know node=")
 			n.queryTimeouts = 0
 			n.executeDefer(u)
-			u.table.add(n)
+			u.table.Add(n)
 		},
 		handle: func(u *UDP, n *Node, e nodeEvent, pkt *ingressPacket) (*nodeState, error) {
 			log.Logger.WithFields(logrus.Fields{"remoteIP": n.IP, "Port": n.UDPPort, "event": e, "nodeID": n.ID.ToString()}).Debug("transition[know].handle")

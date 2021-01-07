@@ -74,7 +74,7 @@ func (t *Table) delete(id NodeID) {
 	t.printLog()
 }
 
-func (t *Table) add(n *Node) {
+func (t *Table) Add(n *Node) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	if n == t.OurNode {
@@ -105,18 +105,6 @@ func (t *Table) updateConnTime(n *Node) {
 	if bn != nil {
 		bn.lastConnAt = time.Now().UTC()
 	}
-}
-
-func (t *Table) putToBucket(n *Node) {
-	// calculate the distance our -> node
-	dist := logarithmDist(t.OurNode.ID, n.ID)
-
-	if contains(t.Bucket[dist], n.ID) {
-		// node exists
-		return
-	}
-	// put to table
-	t.Bucket[dist] = append(t.Bucket[dist], &bNode{node: n})
 }
 
 func (t *Table) closest(target NodeID) *nodesByDistance {
