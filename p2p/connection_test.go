@@ -10,22 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/reed/blockchain/netsync"
-	"github.com/reed/p2p/discover"
 	"net"
 	"testing"
 )
-
-var (
-	ourNodeID = discover.NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(5), byte(4), byte(3), byte(2), byte(1)}
-	ourAddr   = "127.0.0.1:8000"
-)
-
-func getOurNodeInfo() *NodeInfo {
-	return &NodeInfo{
-		ID:         ourNodeID,
-		RemoteAddr: ourAddr,
-	}
-}
 
 func newMockTCP(recvCh chan<- []byte) error {
 	l, err := net.Listen("tcp", ":7000")
