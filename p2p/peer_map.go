@@ -4,7 +4,10 @@
 
 package p2p
 
-import "sync"
+import (
+	"github.com/reed/p2p/discover"
+	"sync"
+)
 
 const (
 	activelyPeerCount = 15
@@ -46,16 +49,16 @@ func (pl *PeerMap) peerCount() int {
 	return len(pl.peers)
 }
 
-func (pl *PeerMap) IDs() []string {
+func (pl *PeerMap) IDs() []discover.NodeID {
 	defer pl.mtx.RUnlock()
 	pl.mtx.RLock()
 	if len(pl.peers) == 0 {
 		return nil
 	}
 
-	var ids []string
-	for addr := range pl.peers {
-		ids = append(ids, addr)
+	var ids []discover.NodeID
+	for _, p := range pl.peers {
+		ids = append(ids, p.nodeInfo.ID)
 	}
 	return ids
 }

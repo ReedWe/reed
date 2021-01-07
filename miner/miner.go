@@ -6,6 +6,7 @@ package miner
 
 import (
 	"bytes"
+	"fmt"
 	bc "github.com/reed/blockchain"
 	"github.com/reed/blockchain/merkle"
 	"github.com/reed/consensus/pow"
@@ -56,6 +57,7 @@ func (m *Miner) Start() error {
 	m.working = true
 	go m.work()
 	log.Logger.Info("Miner is start...")
+	fmt.Println("★ miner Server OnStart")
 	return nil
 }
 
@@ -65,6 +67,7 @@ func (m *Miner) Stop() {
 
 	m.working = false
 	log.Logger.Info("Miner is stop...")
+	fmt.Println("★ miner Server OnStop")
 }
 
 func (m *Miner) fetchBlock() (*types.Block, error) {

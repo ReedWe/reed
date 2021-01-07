@@ -8,9 +8,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/reed/log"
 	"net"
 	"testing"
 )
+
+func init() {
+	log.Init()
+}
 
 func TestContains(t *testing.T) {
 	id1, _ := hex.DecodeString("7b52009b64fd0a2a49e6d8a939753077792b0554")
@@ -68,6 +73,7 @@ type tn struct {
 }
 
 func TestGetWithExclude(t *testing.T) {
+
 	tb := newTable()
 
 	minDist := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), byte(1)}
@@ -78,7 +84,7 @@ func TestGetWithExclude(t *testing.T) {
 		t.Fatal("the first(minimum distance) not right")
 	}
 
-	ns2 := tb.GetWithExclude(4, []string{net.IP{123, 123, 123, 13}.String() + ":" + "8002"})
+	ns2 := tb.GetWithExclude(4, []NodeID{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)}})
 	if len(ns2) != 4 {
 		t.Fatal("wrong count")
 	}

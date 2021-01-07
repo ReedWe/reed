@@ -30,7 +30,7 @@ func (f *findNodeQuery) maybeExecute(u *UDP) (success bool) {
 	if f.remote == u.OurNode {
 		// satisfy queries against the local node directly.
 		log.Logger.Debug("remote is self,return the local node directly")
-		nd := u.table.closest(f.target)
+		nd := u.Table.closest(f.target)
 		log.Logger.Infof("--closest node count:%d", len(nd.entries))
 		for _, entry := range nd.entries {
 			log.Logger.WithFields(logrus.Fields{"IP": entry.IP, "Port": entry.UDPPort, "ID": entry.ID.ToString()}).Debug("--closest")
