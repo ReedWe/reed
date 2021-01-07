@@ -144,7 +144,7 @@ func newTable() *Table {
 	})
 
 	for _, t := range tns {
-		tb.putToBucket(t.node)
+		tb.Add(t.node)
 	}
 
 	for i, b := range tb.Bucket {

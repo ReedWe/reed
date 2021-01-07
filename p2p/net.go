@@ -153,7 +153,7 @@ func (n *Network) dialPeerAndAdd(addr string, wg *sync.WaitGroup) {
 	}()
 
 	n.dialing.add(addr)
-	rawConn, err := dial(addr)
+	rawConn, err := n.dial(addr)
 	if err != nil {
 		log.Logger.WithField("peerAddr", addr).Errorf("failt to dial peer:%v", err)
 		return
@@ -165,7 +165,7 @@ func (n *Network) dialPeerAndAdd(addr string, wg *sync.WaitGroup) {
 }
 
 func (n *Network) connectPeer(rawConn net.Conn) error {
-	nodeInfo, err := handshake(rawConn)
+	nodeInfo, err := n.handshake(rawConn)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (n *Network) releasePeer(peer *Peer) {
 	n.pm.remove(peer.nodeInfo.RemoteAddr)
 }
 
-func dial(address string) (net.Conn, error) {
+func (n *Network) dial(address string) (net.Conn, error) {
 	conn, err := net.DialTimeout("tcp", address, dialTimeout)
 	if err != nil {
 		return nil, errors.Wrap(dialErr, err)
@@ -194,7 +194,8 @@ func dial(address string) (net.Conn, error) {
 	return conn, nil
 }
 
-func handshake(conn net.Conn) (*NodeInfo, error) {
+func (n *Network) handshake(conn net.Conn) (*NodeInfo, error) {
+	log.Logger.WithFields(logrus.Fields{"self": n.ourNodeInfo.RemoteAddr, "remote": conn.RemoteAddr()}).Debug("ready to handshake")
 	if err := conn.SetDeadline(time.Now().Add(handshakeTimeout)); err != nil {
 		return nil, err
 	}
@@ -204,8 +205,14 @@ func handshake(conn net.Conn) (*NodeInfo, error) {
 
 	input := bufio.NewScanner(conn)
 	for input.Scan() {
-		b := input.Bytes()
-		if b[0] == handshakeRespCode {
+		switch b := input.Bytes(); b[0] {
+		case handshakeCode:
+			log.Logger.WithFields(logrus.Fields{"self": n.ourNodeInfo.RemoteAddr, "remote": conn.RemoteAddr()}).Debug("process [handshakeCode]")
+			if err := writeOurNodeInfo(conn, n.ourNodeInfo); err != nil {
+				log.Logger.Error(err)
+			}
+		case handshakeRespCode:
+			log.Logger.WithFields(logrus.Fields{"self": n.ourNodeInfo.RemoteAddr, "remote": conn.RemoteAddr()}).Debug("process [handshakeRespCode]")
 			return NewNodeInfoFromBytes(b[1:], conn)
 		}
 	}
