@@ -6,7 +6,6 @@ package p2p
 
 import (
 	"fmt"
-	"github.com/reed/blockchain/netsync"
 	"github.com/reed/log"
 	"github.com/reed/p2p/discover"
 	"net"
@@ -56,7 +55,7 @@ func startUpTheOtherSidePeer() error {
 	}
 
 	other := mockKadTableRemote()
-	netWork, err := NewNetWork(getRemoteNode(), other, nil, netsync.Handle)
+	netWork, err := NewNetWork(getRemoteNode(), other, nil, nil)
 
 	go func() {
 		for {
@@ -65,7 +64,7 @@ func startUpTheOtherSidePeer() error {
 				fmt.Println(err2)
 			}
 			// handshake
-			netWork.addPeerFromAccept(conn)
+			_ = netWork.addPeerFromAccept(conn)
 		}
 	}()
 	return nil
@@ -74,9 +73,9 @@ func startUpTheOtherSidePeer() error {
 func TestFillPeer(t *testing.T) {
 	log.Init()
 	table := mockKadTableOur()
-	netWork, err := NewNetWork(getOurNode(), table, nil, netsync.Handle)
+	netWork, err := NewNetWork(getOurNode(), table, nil, nil)
 
-	startUpTheOtherSidePeer()
+	_ = startUpTheOtherSidePeer()
 
 	if err != nil {
 		t.Fatal(err)

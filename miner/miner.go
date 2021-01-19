@@ -56,8 +56,7 @@ func (m *Miner) Start() error {
 	}
 	m.working = true
 	go m.work()
-	log.Logger.Info("Miner is start...")
-	fmt.Println("★ miner Server OnStart")
+	fmt.Println("★★Miner Server Start")
 	return nil
 }
 
@@ -66,8 +65,7 @@ func (m *Miner) Stop() {
 	defer m.Unlock()
 
 	m.working = false
-	log.Logger.Info("Miner is stop...")
-	fmt.Println("★ miner Server OnStop")
+	fmt.Println("★★Miner Server Stop")
 }
 
 func (m *Miner) fetchBlock() (*types.Block, error) {

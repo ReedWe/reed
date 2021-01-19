@@ -56,14 +56,14 @@ func (c *Chain) Open() error {
 		return errors.Wrap(openChainErr, "There is already an open channel.")
 	}
 	go receiveBlock(c, c.blockReceptionCh, c.breakWorkCh)
-	log.Logger.Info("Chain is open.")
+	log.Logger.Info("★★Chain is open")
 	return nil
 }
 
 func (c *Chain) Close() {
 	c.isOpen = false
 	close(c.blockReceptionCh)
-	log.Logger.Info("Chain is close.")
+	log.Logger.Info("★★Chain is close")
 
 }
 
@@ -88,13 +88,13 @@ func (c *Chain) ProcessNewBlock(block *types.Block) error {
 		return err
 	}
 
-	//TODO broadcast new blockmanager
+	// TODO broadcast new blockmanager
 
 	if err := ProcessUtxoForSaveBlock(c.Store, block); err != nil {
 		return errors.Wrapf(processBlockChainErr, err.Error())
 	}
 
-	//remove processed transaction in pool
+	// remove processed transaction in pool
 	c.Txpool.RemoveTransactions(block.Transactions)
 
 	return nil

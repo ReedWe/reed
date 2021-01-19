@@ -144,13 +144,13 @@ func (u *UDP) OnStart() error {
 	go u.loop()
 	go u.readLoop()
 	u.refresh()
-	fmt.Println("★ p2p.udp Server OnStart")
+	log.Logger.Info("★★p2p.UDP Server OnStart")
 	return nil
 }
 
 func (u *UDP) OnStop() {
 	close(u.quitCh)
-	fmt.Println("★ p2p.udp Server OnStop")
+	log.Logger.Info("★★p2p.UDP Server OnStop")
 }
 
 func (u *UDP) refresh() {
