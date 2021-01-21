@@ -81,9 +81,9 @@ func (c *Conn) readGoroutine() {
 		}
 	}
 	if input.Err() != nil {
-		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine error:%v", input.Err())
+		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine:tcp conn error:%v", input.Err())
 	} else {
-		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine has closed")
+		log.Logger.WithField("remoteAddr", c.rawConn.RemoteAddr().String()).Errorf("readGoroutine:tcp conn has closed")
 	}
 	if c.getState() == connectSt {
 		// disconnection by the other side

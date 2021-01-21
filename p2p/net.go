@@ -114,14 +114,14 @@ func (n *Network) loopFillPeer() {
 func (n *Network) addPeerFromAccept(conn net.Conn) error {
 	if n.pm.peerCount() >= connectionSize {
 		_ = conn.Close()
-		return errors.Wrap(addPeerFromAcceptErr, "enough peers")
+		return errors.Wrap(addPeerFromAcceptErr, "enough peers already exist")
 	}
 	return n.connectPeer(conn)
 }
 
 func (n *Network) fillPeer() {
 	log.Logger.Debug("time to fill Peer")
-	nodes := n.table.GetWithExclude(activelyPeerCount, n.pm.IDs())
+	nodes := n.table.GetRandNodes(activelyPeerCount, n.pm.IDs())
 	if len(nodes) == 0 {
 		log.Logger.Debug("no available node to dial")
 		return

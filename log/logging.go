@@ -17,5 +17,5 @@ func Init() {
 	Logger.Formatter = &logrus.TextFormatter{
 		FullTimestamp: true,
 	}
-	Logger.Level = logrus.DebugLevel
+	Logger.Level = logrus.InfoLevel
 }

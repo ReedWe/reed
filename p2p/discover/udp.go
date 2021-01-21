@@ -7,7 +7,6 @@ package discover
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/sirupsen/logrus"
@@ -17,7 +16,8 @@ import (
 )
 
 var (
-	packetErr = errors.New("packet message error")
+	packetErr       = errors.New("packet message error")
+	handlePacketErr = errors.New("handle packet error")
 )
 
 var (
@@ -35,8 +35,8 @@ const (
 )
 
 const (
-	responseTimeout       = 1 * time.Second
-	maxFindNodeFailures   = 5
+	responseTimeout      = 1 * time.Second
+	maxFindNodeFailures  = 5
 	refreshTableInterval  = 1 * time.Hour
 	refreshBucketInterval = 5 * time.Minute
 )
@@ -198,7 +198,6 @@ func (u *UDP) lookup(target NodeID) {
 
 		select {
 		case r, ok := <-replyCh:
-			log.Logger.Debugf("lookup case:replyCh")
 			if ok && r != nil {
 				for _, n := range r.nodes {
 					if n != nil {
@@ -208,16 +207,18 @@ func (u *UDP) lookup(target NodeID) {
 				}
 				delete(pendingNodes, r.remoteID)
 			} else {
-				log.Logger.Debug("reply chan closed")
+				log.Logger.Debug("lookup:reply chan closed")
 			}
 		case <-time.After(responseTimeout):
-			log.Logger.Infof("lookup timeout,pendingNodes count %d", len(pendingNodes))
+			log.Logger.Infof("lookup:timeout,current pendingNodes count %d", len(pendingNodes))
 			for _, v := range pendingNodes {
 				if v.pendingQuery == nil {
 					continue
 				}
 				// forget all pending requests
-				close(v.pendingQuery.reply)
+				if v.pendingQuery.reply != nil {
+					close(v.pendingQuery.reply)
+				}
 				// if reply is nil,don't write in replyChan
 				// see func processFindNodeResp()
 				v.pendingQuery.reply = nil
@@ -302,7 +303,6 @@ func (u *UDP) loop() {
 			delete(u.timeoutEvents, toe)
 			u.processPacket(toe.node, toe.event, nil)
 		case f := <-u.queryCh:
-			fmt.Println("<-queryCh")
 			if !f.maybeExecute(u) {
 				// delay execute
 				f.remote.pushToDefer(&f)
@@ -315,7 +315,8 @@ func (u *UDP) loop() {
 			log.Logger.Info("time to refresh k-bucket")
 			targetNode := u.Table.chooseRandomNode()
 			if targetNode != nil {
-				u.lookup(targetNode.ID)
+				// a new goroutine to lookup
+				go u.lookup(targetNode.ID)
 			} else {
 				log.Logger.Info("no target to lookup")
 			}
@@ -362,10 +363,11 @@ func (u *UDP) processQueryEvent(n *Node, e nodeEvent, pkt *ingressPacket) (*node
 		// search the closest nodes with target we know
 		nd := u.Table.closest(pkt.data.(*findNode).Target)
 		u.sendFindNodeResp(n, nd)
-		u.Table.updateConnTime(n)
+		u.Table.updateConnTimeAndRemoveToLast(n)
 		return n.state, nil
 	case findNodeRespPacket:
 		err := u.processFindNodeResp(n, pkt)
+		u.Table.updateConnTimeAndRemoveToLast(n)
 		return n.state, err
 	case findNodeRespTimeout:
 		if n.pendingQuery != nil {
@@ -450,6 +452,10 @@ func (u *UDP) readLoop() {
 	}
 }
 
+// header
+// [2]byte	version
+// [1]byte	packetType
+// [32]byte	nodeId
 func (u *UDP) handlePacket(from *net.UDPAddr, buf []byte) {
 	pkt := ingressPacket{
 		remoteID:   BytesToHash(buf[3 : IDLength+3]),
@@ -468,8 +474,8 @@ func (u *UDP) handlePacket(from *net.UDPAddr, buf []byte) {
 	default:
 		log.Logger.Errorf("unknown packet type %d", pkt.event)
 	}
-	if err := json.Unmarshal(buf[23:], pkt.data); err != nil {
-		log.Logger.Errorf("failed to json unmarshal %v", err)
+	if err := json.Unmarshal(buf[IDLength+3:], pkt.data); err != nil {
+		log.Logger.Errorf("%s:failed to json unmarshal %v", handlePacketErr.Error(), err)
 	}
 	u.readCh <- pkt
 }
@@ -498,7 +504,7 @@ func (ns *nodeState) canQuery() bool {
 // header
 // [2]byte	version
 // [1]byte	packetType
-// [20]byte	nodeId
+// [32]byte	nodeId
 func packet(e nodeEvent, ourId NodeID, msg interface{}) ([]byte, error) {
 	b := new(bytes.Buffer)
 	b.Write(version)
