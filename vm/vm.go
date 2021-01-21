@@ -1,3 +1,7 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package vm
 
 import (
@@ -8,7 +12,7 @@ import (
 )
 
 var (
-	vmErr = errors.New("virualMachine run error")
+	vmErr = errors.New("virtualMachine run error")
 )
 
 type signFunc func(pk []byte, sig []byte) bool

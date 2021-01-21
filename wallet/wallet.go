@@ -1,3 +1,7 @@
+// Copyright 2020 The Reed Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package wallet
 
 import (
@@ -16,7 +20,7 @@ func My(password string) (*Wallet, error) {
 		return nil, errors.New("invalid wallet password")
 	}
 
-	//hard code key
+	// hard code key
 	pub, _ := hex.DecodeString("b12049d709358dc427433050625aa2135163181ccc320f22859d7c065ecc9dcb")
 	priv, _ := hex.DecodeString("b4af5bb2bb1fb9086d2cac65a667f1810dfb0ddd904f2edc947227271fdcaba5b12049d709358dc427433050625aa2135163181ccc320f22859d7c065ecc9dcb")
 

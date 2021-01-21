@@ -26,7 +26,7 @@ func (g *nodeNetGuts) executeDefer(u *UDP) {
 }
 
 func (f *findNodeQuery) maybeExecute(u *UDP) (success bool) {
-	log.Logger.WithFields(logrus.Fields{"remoteID": f.remote.ID.ToString(), "IP": f.remote.IP, "Port": f.remote.UDPPort, "target": f.target.ToString()}).Info("try execute findNodeQuery")
+	log.Logger.WithFields(logrus.Fields{"remoteID": f.remote.ID.ToString(), "IP": f.remote.IP, "Port": f.remote.UDPPort, "target": f.target.ToString()}).Debug("try execute findNodeQuery")
 	if f.remote == u.OurNode {
 		// satisfy queries against the local node directly.
 		log.Logger.Debug("remote is self,return the local node directly")
@@ -47,11 +47,11 @@ func (f *findNodeQuery) maybeExecute(u *UDP) (success bool) {
 		return
 	}
 	if !f.remote.state.canQuery() {
-		log.Logger.WithField("state", f.remote.state).Info("can not query:invalid state")
+		log.Logger.WithField("state", f.remote.state).Debug("can not query:invalid state")
 		return
 	}
 	if f.remote.pendingQuery != nil {
-		log.Logger.Info("can not query:pendingQuery Queue not empty")
+		log.Logger.Debug("can not query:pendingQuery Queue not empty")
 		return
 	}
 	u.sendFindNode(f.remote, f.target)

@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	IDLength = 20
+	IDLength = 32
 )
 
 type NodeID [IDLength]byte

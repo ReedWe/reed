@@ -5,11 +5,11 @@
 package command
 
 import (
-	"fmt"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/reed/api"
 	bc "github.com/reed/blockchain"
 	"github.com/reed/blockchain/config"
+	"github.com/reed/blockchain/netsync"
 	"github.com/reed/blockchain/store"
 	"github.com/reed/database/leveldb"
 	"github.com/reed/errors"
@@ -43,7 +43,7 @@ func NewNode() *Node {
 		common.Exit(common.Fmt("Failed to create chain:%v", err))
 	}
 
-	p2p, err := p2p.NewP2PServer()
+	p2p, err := p2p.NewP2PServer(netsync.NewHandleServ())
 	if err != nil {
 		common.Exit(common.Fmt(err.Error()))
 	}
@@ -76,8 +76,7 @@ func (n *Node) OnStart() error {
 	if err := n.p2pServ.Start(); err != nil {
 		return err
 	}
-	log.Logger.Info("Node started successfully.")
-	fmt.Println("★ Node Server OnStart")
+	log.Logger.Info("★Node started successfully.")
 	return nil
 }
 
@@ -91,8 +90,7 @@ func (n *Node) OnStop() {
 		log.Logger.Error(err)
 	}
 	n.instanceLock = nil
-	log.Logger.Info("Node has shut down.")
-	fmt.Println("★ Node Server OnStop")
+	log.Logger.Info("★Node has shut down.")
 }
 
 func (n *Node) RunForever() {

@@ -5,7 +5,6 @@
 package p2p
 
 import (
-	"fmt"
 	"github.com/reed/log"
 	"github.com/tendermint/tmlibs/common"
 	"net"
@@ -37,7 +36,7 @@ func NewListener(ip net.IP, port uint16) (*Listener, error) {
 
 func (l *Listener) OnStart() error {
 	go l.loop()
-	fmt.Println("★ p2p.listener Server OnStart")
+	log.Logger.Info("★★p2p.Listener Server OnStart")
 	return nil
 }
 
@@ -45,7 +44,7 @@ func (l *Listener) OnStop() {
 	if err := l.listen.Close(); err != nil {
 		log.Logger.Errorf("failed to stop listener:%v", err)
 	}
-	fmt.Println("★ p2p.listener Server OnStop")
+	log.Logger.Info("★★p2p.Listener Server OnStop")
 }
 
 func (l *Listener) loop() {

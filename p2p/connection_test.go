@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/reed/blockchain/netsync"
 	"net"
 	"testing"
 )
@@ -37,14 +36,14 @@ func newMockTCP(recvCh chan<- []byte) error {
 
 func TestSpecialMsg(t *testing.T) {
 	recvCh := make(chan []byte)
-	newMockTCP(recvCh)
+	_ = newMockTCP(recvCh)
 
 	conn, err := net.Dial("tcp", ":7000")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	connection := NewConnection("", nil, conn, getOurNodeInfo(), netsync.Handle)
+	connection := NewConnection("", nil, conn, getOurNodeInfo(), nil)
 	isSpecialMsg := connection.specialMsg([]byte{handshakeCode})
 	if !isSpecialMsg {
 		t.Fatal("can not recognize handshakeCode")

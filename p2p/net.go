@@ -6,7 +6,6 @@ package p2p
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/reed/errors"
 	"github.com/reed/log"
 	"github.com/reed/p2p/discover"
@@ -37,19 +36,19 @@ type Network struct {
 	dialing     *PeerDialing
 	table       *discover.Table
 	ourNodeInfo *NodeInfo
-	handleFunc  HandleFunc
+	handlerServ Handler
 	acceptCh    <-chan net.Conn
 	disConnCh   chan string
 	quitCh      chan struct{}
 }
 
-func NewNetWork(ourNode *discover.Node, t *discover.Table, acceptCh <-chan net.Conn, handleFunc HandleFunc) (*Network, error) {
+func NewNetWork(ourNode *discover.Node, t *discover.Table, acceptCh <-chan net.Conn, handlerServ Handler) (*Network, error) {
 	n := &Network{
 		pm:          NewPeerMap(),
 		dialing:     NewPeerDialing(),
 		table:       t,
 		ourNodeInfo: NewOurNodeInfo(ourNode.ID, ourNode.IP, ourNode.TCPPort),
-		handleFunc:  handleFunc,
+		handlerServ: handlerServ,
 		acceptCh:    acceptCh,
 		disConnCh:   make(chan string),
 		quitCh:      make(chan struct{}),
@@ -61,7 +60,7 @@ func NewNetWork(ourNode *discover.Node, t *discover.Table, acceptCh <-chan net.C
 func (n *Network) OnStart() error {
 	go n.loop()
 	go n.loopFillPeer()
-	fmt.Println("★ p2p.network Server OnStart")
+	log.Logger.Info("★★p2p.TCP Network Server OnStart")
 	return nil
 }
 
@@ -71,7 +70,7 @@ func (n *Network) OnStop() {
 		n.releasePeer(v)
 	}
 	close(n.disConnCh)
-	fmt.Println("★ p2p.network Server OnStop")
+	log.Logger.Info("★★p2p.TCP Network Server OnStop")
 }
 
 func (n *Network) loop() {
@@ -115,14 +114,14 @@ func (n *Network) loopFillPeer() {
 func (n *Network) addPeerFromAccept(conn net.Conn) error {
 	if n.pm.peerCount() >= connectionSize {
 		_ = conn.Close()
-		return errors.Wrap(addPeerFromAcceptErr, "enough peers")
+		return errors.Wrap(addPeerFromAcceptErr, "enough peers already exist")
 	}
 	return n.connectPeer(conn)
 }
 
 func (n *Network) fillPeer() {
 	log.Logger.Debug("time to fill Peer")
-	nodes := n.table.GetWithExclude(activelyPeerCount, n.pm.IDs())
+	nodes := n.table.GetRandNodes(activelyPeerCount, n.pm.IDs())
 	if len(nodes) == 0 {
 		log.Logger.Debug("no available node to dial")
 		return
@@ -171,7 +170,7 @@ func (n *Network) connectPeer(rawConn net.Conn) error {
 		return err
 	}
 
-	peer := NewPeer(n.ourNodeInfo, nodeInfo, n.disConnCh, rawConn, n.handleFunc)
+	peer := NewPeer(n.ourNodeInfo, nodeInfo, n.disConnCh, rawConn, n.handlerServ)
 	if err = peer.Start(); err != nil {
 		return err
 	}
