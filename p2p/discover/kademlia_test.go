@@ -17,6 +17,20 @@ func init() {
 	log.Init()
 }
 
+func TestLogarithmDist(t *testing.T) {
+	id1 := NodeID{31: byte(1)}
+	id2 := NodeID{31: byte(2)}
+
+	id3 := NodeID{31: byte(1)}
+
+	dist := logarithmDist(id1, id2)
+	dist2 := logarithmDist(id1, id3)
+
+	if dist != 1 || dist2 != 0 {
+		t.Error("logarithmDist error")
+	}
+}
+
 func TestContains(t *testing.T) {
 	id1, _ := hex.DecodeString("7b52009b64fd0a2a49e6d8a939753077792b0554")
 	id2, _ := hex.DecodeString("40bd001563085fc35165329ea1ff5c5ecbdbbeef")
@@ -36,8 +50,8 @@ func TestContains(t *testing.T) {
 }
 
 func TestComputeDist(t *testing.T) {
-	ta := NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3)}
-	id1 := NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3)}
+	ta := NodeID{31: byte(3)}
+	id1 := NodeID{31: byte(3)}
 	id2 := NodeID{0, 0, 0, 0, 0, byte(8), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2)}
 
 	dist := computeDist(ta, id1, id2)
@@ -46,15 +60,15 @@ func TestComputeDist(t *testing.T) {
 
 func TestNodesByDistance(t *testing.T) {
 	nd := nodesByDistance{
-		target: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3)},
+		target: NodeID{31: byte(3)},
 		entries: []*Node{
-			{ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(1)}},
-			{ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), 0}},
-			{ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(12), 0, 0, 0, 0, 0, 0, byte(2), 0, 0}},
+			{ID: NodeID{31: byte(1)}},
+			{ID: NodeID{30: byte(2), 31: 0}},
+			{ID: NodeID{9: byte(12), 29: byte(2)}},
 		},
 	}
 	node := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), 0, byte(1)},
+		ID: NodeID{29: byte(2), 31: byte(1)},
 	}
 	nd.push(node)
 
@@ -76,15 +90,15 @@ func TestGetWithExclude(t *testing.T) {
 
 	tb := newTable()
 
-	minDist := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), byte(1)}
-	secondDist := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)}
+	minDist := []byte{30: byte(2), 31: byte(1)}
+	secondDist := []byte{29: byte(3), 30: byte(2), 31: byte(1)}
 
-	ns := tb.GetWithExclude(1, nil)
+	ns := tb.GetRandNodes(1, nil)
 	if !bytes.Equal(ns[0].ID.Bytes(), minDist) {
 		t.Fatal("the first(minimum distance) not right")
 	}
 
-	ns2 := tb.GetWithExclude(4, []NodeID{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)}})
+	ns2 := tb.GetRandNodes(4, []NodeID{{29: byte(3), 30: byte(2), 31: byte(1)}})
 	if len(ns2) != 4 {
 		t.Fatal("wrong count")
 	}
@@ -98,30 +112,30 @@ func TestGetWithExclude(t *testing.T) {
 
 func newTable() *Table {
 	our := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(1)},
+		ID: NodeID{31: byte(1)},
 	}
 	tb, _ := NewTable(our)
 
 	n2 := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(2), byte(1)},
+		ID: NodeID{30: byte(2), 31: byte(1)},
 	}
 	n3 := &Node{
-		ID:      NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(3), byte(2), byte(1)},
+		ID:      NodeID{29: byte(3), 30: byte(2), 31: byte(1)},
 		TCPPort: 8002,
 		UDPPort: 8001,
 		IP:      net.IP{123, 123, 123, 13},
 	}
 	n4 := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(4), byte(3), byte(2), byte(1)},
+		ID: NodeID{28: byte(4), 29: byte(3), 30: byte(2), 31: byte(1)},
 	}
 	n5 := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(5), byte(4), byte(3), byte(2), byte(1)},
+		ID: NodeID{27: byte(5), 28: byte(4), 29: byte(3), 30: byte(2), 31: byte(1)},
 	}
 	n6 := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(6), byte(5), byte(4), byte(3), byte(2), byte(1)},
+		ID: NodeID{26: byte(6), 27: byte(5), 28: byte(4), 29: byte(3), 30: byte(2), 31: byte(1)},
 	}
 	n7 := &Node{
-		ID: NodeID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(7), byte(6), byte(5), byte(4), byte(3), byte(2), byte(1)},
+		ID: NodeID{25: byte(7), 26: byte(6), 27: byte(5), 28: byte(4), 29: byte(3), 30: byte(2), 31: byte(1)},
 	}
 	var tns []*tn
 	tns = append(tns, &tn{

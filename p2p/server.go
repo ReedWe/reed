@@ -5,7 +5,7 @@
 package p2p
 
 import (
-	"github.com/reed/blockchain/netsync"
+	"github.com/reed/log"
 	"github.com/reed/p2p/discover"
 	"github.com/tendermint/tmlibs/common"
 )
@@ -17,7 +17,7 @@ type Server struct {
 	network     *Network
 }
 
-func NewP2PServer() (*Server, error) {
+func NewP2PServer(handleService Handler) (*Server, error) {
 	udp, err := discover.NewDiscover()
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func NewP2PServer() (*Server, error) {
 		return nil, err
 	}
 
-	network, err := NewNetWork(udp.OurNode, udp.Table, listener.acceptCh, netsync.Handle)
+	network, err := NewNetWork(udp.OurNode, udp.Table, listener.acceptCh, handleService)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func NewP2PServer() (*Server, error) {
 		udp:         udp,
 		network:     network,
 	}
-	serv.BaseService = *common.NewBaseService(nil, "p2pserver", serv)
+	serv.BaseService = *common.NewBaseService(nil, "p2pServer", serv)
 	return serv, nil
 }
 
@@ -56,7 +56,13 @@ func (s *Server) OnStart() error {
 }
 
 func (s *Server) OnStop() {
-	s.udp.Stop()
-	s.tcpListener.Stop()
-	s.network.Stop()
+	if err := s.udp.Stop(); err != nil {
+		log.Logger.Errorf("failed to stop UDP Server:%v", err)
+	}
+	if err := s.tcpListener.Stop(); err != nil {
+		log.Logger.Errorf("failed to stop Listener Server:%v", err)
+	}
+	if err := s.network.Stop(); err != nil {
+		log.Logger.Errorf("failed to stop TCP Newwork Server:%v", err)
+	}
 }

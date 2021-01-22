@@ -46,8 +46,8 @@ type p2p struct {
 }
 
 func init() {
+	// confFileName := "config.toml"
 	confFileName := "config.toml"
-	// confFileName := "config3.toml"
 	homeDir := ""
 	home := os.Getenv("HOME")
 	if home == "" {

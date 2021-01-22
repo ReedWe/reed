@@ -4,15 +4,28 @@
 
 package netsync
 
+import "fmt"
+
 const (
-	getBlockHeaderCode = byte(0x01)
+	getBlockHeaderCode     = byte(0x01)
+	getBlockHeaderRespCode = byte(0x02)
 )
 
-func Handle(msg []byte) []byte {
+type HandleServ struct {
+}
+
+func NewHandleServ() *HandleServ {
+	return &HandleServ{}
+}
+
+func (h HandleServ) Receive(msg []byte) []byte {
 	var writeBytes []byte
 	switch msgType := msg[0]; msgType {
 	case getBlockHeaderCode:
 		writeBytes = []byte("this is my block header")
+	case getBlockHeaderRespCode:
+		fmt.Println("receive a getBlockHeaderRespCode:")
+		fmt.Printf(string(msg[1:]))
 	}
 	return writeBytes
 }

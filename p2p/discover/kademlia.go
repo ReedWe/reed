@@ -5,8 +5,9 @@
 package discover
 
 import (
+	"github.com/reed/common/byteutil/byteconv"
 	"github.com/reed/log"
-	"github.com/reed/types"
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"sort"
 	"sync"
@@ -29,7 +30,7 @@ const (
 	// FIND NODE RPCs to the α nodes it has chosen.
 	alpha = 3
 
-	IDBits = len(types.Hash{}) * 8
+	IDBits = len(NodeID{}) * 8
 )
 
 type Table struct {
@@ -51,13 +52,14 @@ func NewTable(ourNode *Node) (*Table, error) {
 	return t, nil
 }
 
-func (t *Table) getNodeAccurate(id NodeID) *bNode {
-	kbs := t.Bucket[logarithmDist(t.OurNode.ID, id)]
-	bn := getNodeFromKbs(kbs, id)
+func (t *Table) getNodeAccurate(id NodeID) (bNode *bNode, dist int, index int) {
+	d := logarithmDist(t.OurNode.ID, id)
+	kbs := t.Bucket[d]
+	bn, idx := getNodeFromKbs(kbs, id)
 	if bn == nil {
-		return nil
+		return nil, 0, 0
 	}
-	return bn
+	return bn, d, idx
 }
 
 func (t *Table) delete(id NodeID) {
@@ -91,17 +93,23 @@ func (t *Table) Add(n *Node) {
 		t.Bucket[dist] = append(t.Bucket[dist], &bNode{node: n, lastConnAt: time.Now().UTC()})
 	}
 
-	log.Logger.Info("add node complete")
-	t.printLog()
+	log.Logger.WithFields(logrus.Fields{"ID": n.ID.ToString(), "IP": n.IP.String()}).Info("added node")
 
 	// TODO when len(kBucket) >= kBucketSize
 	// do something...
 }
 
-func (t *Table) updateConnTime(n *Node) {
-	bn := t.getNodeAccurate(n.ID)
+func (t *Table) updateConnTimeAndRemoveToLast(n *Node) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	bn, dist, index := t.getNodeAccurate(n.ID)
 	if bn != nil {
 		bn.lastConnAt = time.Now().UTC()
+		if len(t.Bucket[dist]) != index+1 {
+			// move to last
+			copy(t.Bucket[dist][index:], t.Bucket[dist][index+1:])
+			t.Bucket[dist][len(t.Bucket[dist])-1] = bn
+		}
 	}
 }
 
@@ -149,7 +157,7 @@ func (t *Table) getRandomOne(condition func(bn *bNode) bool) *Node {
 	return nodes[rd.Intn(len(nodes))]
 }
 
-func (t *Table) GetWithExclude(count int, excludePeerIDs []NodeID) []*Node {
+func (t *Table) GetRandNodes(count int, excludePeerIDs []NodeID) []*Node {
 	exclude := func(id NodeID) bool {
 		if len(excludePeerIDs) == 0 {
 			return false
@@ -163,19 +171,30 @@ func (t *Table) GetWithExclude(count int, excludePeerIDs []NodeID) []*Node {
 	}
 
 	var nodes []*Node
-
-loop:
 	for _, b := range t.Bucket {
 		for _, n := range b {
-			if !exclude(n.node.ID) {
-				nodes = append(nodes, n.node)
-				if count == len(nodes) {
-					break loop
-				}
+			nodes = append(nodes, n.node)
+		}
+	}
+	if len(nodes) == 0 {
+		return nodes
+	}
+
+	// Shuffle
+	for i := uint32(len(nodes) - 1); i > 0; i-- {
+		j := randUint32(i)
+		nodes[i], nodes[j] = nodes[j], nodes[i]
+	}
+	var chooses []*Node
+	for _, n := range nodes {
+		if !exclude(n.ID) {
+			chooses = append(chooses, n)
+			if len(chooses) >= count {
+				break
 			}
 		}
 	}
-	return nodes
+	return chooses
 }
 
 func (t *Table) printLog() {
@@ -231,20 +250,30 @@ func computeDist(target, a, b NodeID) int {
 	return 0
 }
 
-func getNodeFromKbs(ns []*bNode, id NodeID) *bNode {
+func getNodeFromKbs(ns []*bNode, id NodeID) (*bNode, int) {
 	if len(ns) == 0 {
-		return nil
+		return nil, 0
 	}
-	for _, bn := range ns {
+	for i, bn := range ns {
 		if bn.node.ID == id {
-			return bn
+			return bn, i
 		}
 	}
-	return nil
+	return nil, 0
 }
 
 func contains(ns []*bNode, id NodeID) bool {
-	return getNodeFromKbs(ns, id) != nil
+	bNode, _ := getNodeFromKbs(ns, id)
+	return bNode != nil
+}
+
+func randUint32(max uint32) uint32 {
+	if max < 2 {
+		return 0
+	}
+	var b [4]byte
+	rand.Read(b[:])
+	return byteconv.ByteToUint32(b[:]) % max
 }
 
 // logarithmDist return distance between a and b

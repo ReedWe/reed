@@ -9,7 +9,7 @@ const (
 )
 
 func CalcCoinbaseAmt(curHeight uint64) uint64 {
-	halving := curHeight / 210000 //TODO config params
+	halving := curHeight / 210000 // TODO config params
 	if halving >= 64 {
 		return 0
 	}

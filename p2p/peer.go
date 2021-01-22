@@ -17,10 +17,10 @@ type Peer struct {
 	conn     *Conn
 }
 
-func NewPeer(ourNodeInfo *NodeInfo, nodeInfo *NodeInfo, disConnCh chan<- string, rawConn net.Conn, handleFunc HandleFunc) *Peer {
+func NewPeer(ourNodeInfo *NodeInfo, nodeInfo *NodeInfo, disConnCh chan<- string, rawConn net.Conn, handlerServ Handler) *Peer {
 	peer := &Peer{
 		nodeInfo: nodeInfo,
-		conn:     NewConnection(nodeInfo.RemoteAddr, disConnCh, rawConn, ourNodeInfo, handleFunc),
+		conn:     NewConnection(nodeInfo.RemoteAddr, disConnCh, rawConn, ourNodeInfo, handlerServ),
 	}
 	peer.BaseService = *common.NewBaseService(nil, "peer", peer)
 	return peer
